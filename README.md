@@ -8,11 +8,20 @@ Analisi multidimensionale delle performance organiche di un sito web tramite dat
 - **Data Visualization:** Plotly, Streamlit
 - **Pipeline:** ETL (Extract, Transform, Load) da file CSV a dashboard interattiva.
 
-## 📊 Road Map & Sviluppi Futuri
-- [ ] **Data Fusion:** Integrazione dei file `Pagine.csv` e `Dispositivi.csv` per un'analisi segmentata.
-- [ ] **SEO Score:** Creazione di un indice di "Salute SEO" basato su CTR e Posizione.
-- [ ] **Trend Analysis:** Analisi temporale delle performance nel tempo.
-- [ ] **Automazione:** Implementazione di una pipeline per l'aggiornamento automatico dei report.
+ Pipeline & Roadmap di Sviluppo
+🤖 Automazione (CI/CD Pipeline)
+Il sistema è progettato per garantire continuità operativa attraverso processi automatizzati:
+Data Ingestion Automatizzata: Implementazione di workflow tramite GitHub Actions per l'aggiornamento schedulato dei dati.
+Integrazione Continua (CI): Ogni modifica al codice viene validata automaticamente, garantendo l'integrità dell'analisi.
+🔮 Roadmap & Evoluzioni Future
+
+SaaS Self-Service: Implementazione di un modulo di caricamento file tramite interfaccia web, permettendo agli utenti di analizzare i propri dataset in tempo reale.
+
+Generative SEO Assistant: Integrazione di modelli di linguaggio (LLM) per generare suggerimenti di copywriting ottimizzati direttamente dalla dashboard.
+
+Data Fusion Avanzata: Espansione del modello di analisi incrociando i dati di Query.csv con Pagine.csv e Dispositivi.csv per una visione a 360° dell'utente.
+
+Containerizzazione: Packaging dell'intera applicazione tramite Docker per facilitare il deploy in ambienti cloud scalabili.
 
 ## 📂 Struttura Dati
 Il progetto analizza principalmente il file `Query.csv` estratto da Google Search Console, focalizzandosi su:
