@@ -8,7 +8,7 @@ Analisi multidimensionale delle performance organiche di un sito web tramite dat
 - **Data Visualization:** Plotly, Streamlit
 - **Pipeline:** ETL (Extract, Transform, Load) da file CSV a dashboard interattiva.
 
- Pipeline & Roadmap di Sviluppo
+🚀 Pipeline & Roadmap di Sviluppo
 🤖 Automazione (CI/CD Pipeline)
 Il sistema è progettato per garantire continuità operativa attraverso processi automatizzati:
 Data Ingestion Automatizzata: Implementazione di workflow tramite GitHub Actions per l'aggiornamento schedulato dei dati.
