@@ -1,11 +1,17 @@
 import google.generativeai as genai
 import os
+import streamlit as st # Importa streamlit per leggere i segreti
 
 # Configura l'API (usa una variabile d'ambiente per sicurezza!)
-
-api_key = os.getenv("GOOGLE_API_KEY") 
-
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+try:
+    api_key = os.getenv("GOOGLE_API_KEY") 
+except:
+    # 2. Se non siamo su Cloud, carica dal file .env locale
+    from dotenv import load_dotenv
+    load_dotenv()
+    api_key = os.getenv("GOOGLE_API_KEY")
+    
+genai.configure(api_key=api_key)
 def generate_seo_suggestions(query, posizione, ctr):
     model = genai.GenerativeModel('gemini-pro')
     prompt = f"""
