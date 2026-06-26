@@ -19,6 +19,9 @@ def clean_gsc_common(df):
     return df
 
 def load_query(filepath):
+    # Se è un file caricato da Streamlit, dobbiamo resettare il puntatore all'inizio
+    if hasattr(filepath, 'seek'):
+        filepath.seek(0)
     # Se è un percorso (stringa), usa pd.read_csv. Se è un file caricato, lo legge direttamente
     if isinstance(filepath, str):
         df = pd.read_csv(filepath, quotechar='"', on_bad_lines='skip')
@@ -28,6 +31,9 @@ def load_query(filepath):
     return clean_gsc_common(df)
 
 def load_date(filepath):
+    # Se è un file caricato da Streamlit, dobbiamo resettare il puntatore all'inizio
+    if hasattr(filepath, 'seek'):
+        filepath.seek(0)
     df = pd.read_csv(filepath, quotechar='"', on_bad_lines='skip')
     # Se il tuo file 'Grafico.csv' ha la colonna '0' come data, la rinominiamo qui
     df.columns = ['Data', 'Clic', 'Impressioni', 'CTR', 'Posizione']
@@ -35,6 +41,9 @@ def load_date(filepath):
     return clean_gsc_common(df)
 
 def load_pages(filepath):
+    # Se è un file caricato da Streamlit, dobbiamo resettare il puntatore all'inizio
+    if hasattr(filepath, 'seek'):
+        filepath.seek(0)
     df = pd.read_csv(filepath, quotechar='"', on_bad_lines='skip')
     df.columns = ['Pagina', 'Clic', 'Impressioni', 'CTR', 'Posizione']
     return clean_gsc_common(df)
