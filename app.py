@@ -12,13 +12,14 @@ st.markdown("Trasforma i dati di Search Console in strategie di crescita.")
 st.sidebar.header("Carica i Dati")
 uploaded_query = st.sidebar.file_uploader("Carica Query.csv", type=['csv'])
 uploaded_pages = st.sidebar.file_uploader("Carica Pagine.csv", type=['csv'])
+uploaded_grafico = st.sidebar.file_uploader("Carica Grafico.csv", type=['csv'])
 
 # 2. Logica: se l'utente carica i file, usa quelli. Se no, usa quelli di default (se esistono)
-if uploaded_query and uploaded_pages:
+if uploaded_query and uploaded_pages and uploaded_grafico:
     df = load_query(uploaded_query) # Nota: dobbiamo aggiornare load_query sotto
     df_pages = add_seo_score(load_pages(uploaded_pages))
+    df_date = load_date(uploaded_grafico) 
     st.success("Dati caricati correttamente!")
-    df_date = load_date('data/Grafico.csv') 
 
     # --- LOGICA DI BUSINESS ---
     def classify_keyword(row):
@@ -53,7 +54,6 @@ if uploaded_query and uploaded_pages:
 
     with tab3:
         st.subheader("Audit Automatico delle Pagine")
-        df_pages = add_seo_score(load_pages('data/Pagine.csv'))
         
         # Applichiamo la diagnosi
         df_pages['Stato'] = df_pages.apply(diagnose_page, axis=1)
@@ -117,7 +117,7 @@ if uploaded_query and uploaded_pages:
         if st.button("📥 Esporta Piano d'Azione in CSV"):
             st.download_button("Scarica Piano", data=quick_wins.to_csv(index=False), file_name="piano_azione.csv")
 else:
-    st.info("👋 Carica i file Query.csv e Pagine.csv nella barra laterale per iniziare l'analisi.")
+    st.info("👋 Carica i file richiesti nella barra laterale per iniziare l'analisi.")
     st.stop() # Ferma l'esecuzione finché non ci sono i file
 
 with st.sidebar:
