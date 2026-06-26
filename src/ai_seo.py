@@ -2,8 +2,10 @@ import google.generativeai as genai
 import os
 
 # Configura l'API (usa una variabile d'ambiente per sicurezza!)
-genai.configure(os.environ["GOOGLE_API_KEY"])
 
+api_key = os.getenv("GOOGLE_API_KEY") 
+
+genai.configure(api_key=api_key)
 def generate_seo_suggestions(query, posizione, ctr):
     model = genai.GenerativeModel('gemini-1.5-flash')
     
