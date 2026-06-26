@@ -19,7 +19,11 @@ def clean_gsc_common(df):
     return df
 
 def load_query(filepath):
-    df = pd.read_csv(filepath, quotechar='"', on_bad_lines='skip')
+    # Se è un percorso (stringa), usa pd.read_csv. Se è un file caricato, lo legge direttamente
+    if isinstance(filepath, str):
+        df = pd.read_csv(filepath, quotechar='"', on_bad_lines='skip')
+    else:
+        df = pd.read_csv(filepath, quotechar='"', on_bad_lines='skip')
     df.columns = ['Query', 'Clic', 'Impressioni', 'CTR', 'Posizione']
     return clean_gsc_common(df)
 
