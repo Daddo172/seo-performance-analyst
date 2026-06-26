@@ -52,16 +52,33 @@ if uploaded_query and uploaded_pages and uploaded_grafico:
         st.subheader("📋 Lista Priorità d'Azione (Quick Wins)")
         quick_wins = df[df['Categoria'] == 'Quick Wins (2a Pagina)'].sort_values('Traffico_Mancante', ascending=False)
         st.dataframe(quick_wins[['Query', 'Posizione', 'Impressioni', 'Traffico_Mancante']], use_container_width=True)
-        if st.button("✨ Genera Strategia SEO con IA"):
-            with st.spinner("L'IA sta analizzando le tue keyword..."):
-                # Prendiamo la prima keyword dalle Quick Wins
-                top_keyword = quick_wins.iloc[0]['Query']
-                posizione = quick_wins.iloc[0]['Posizione']
-                ctr = 0.05 # Esempio
+        st.subheader("🤖 Assistente Strategico SEO")
+    
+        # 1. Inizializziamo lo stato della chat se non esiste
+        if "messages" not in st.session_state:
+            st.session_state.messages = []
+
+        # 2. Mostriamo i messaggi passati
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+    
+        # 3. Input dell'utente
+        if prompt := st.chat_input("Chiedi all'IA un consiglio su una keyword..."):
+            # Mostriamo il messaggio dell'utente
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
+
+        # 4. Risposta dell'IA
+        with st.chat_message("assistant"):
+            with st.spinner("Sto elaborando..."):
+                # Qui richiamiamo la funzione che abbiamo creato
+                response = generate_seo_suggestions(prompt, posizione=10, ctr=0.02) 
+                st.markdown(response)
         
-                suggerimento = generate_seo_suggestions(top_keyword, posizione, ctr)
-                st.markdown("### 💡 Suggerimenti IA")
-                st.write(suggerimento)
+        # Salviamo la risposta
+        st.session_state.messages.append({"role": "assistant", "content": response})
         
     with tab3:
         st.subheader("Audit Automatico delle Pagine")
