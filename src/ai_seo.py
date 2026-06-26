@@ -5,7 +5,7 @@ import os
 
 api_key = os.getenv("GOOGLE_API_KEY") 
 
-genai.configure(api_key=api_key)
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 def generate_seo_suggestions(query, posizione, ctr):
     model = genai.GenerativeModel('gemini-pro')
     prompt = f"""
