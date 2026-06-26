@@ -4,3 +4,4 @@ plotly
 sqlalchemy
 requests
 python-dotenv
+google-generativeai
