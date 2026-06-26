@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from ai_seo import generate_seo_suggestions
+from ai_seo import generate_seo_suggestions
 from src.processor import add_seo_score, diagnose_page, get_actionable_insight , load_query, load_pages, load_date
 
 # Configurazione Pagina
@@ -51,7 +53,17 @@ if uploaded_query and uploaded_pages and uploaded_grafico:
         st.subheader("📋 Lista Priorità d'Azione (Quick Wins)")
         quick_wins = df[df['Categoria'] == 'Quick Wins (2a Pagina)'].sort_values('Traffico_Mancante', ascending=False)
         st.dataframe(quick_wins[['Query', 'Posizione', 'Impressioni', 'Traffico_Mancante']], use_container_width=True)
-
+        if st.button("✨ Genera Strategia SEO con IA"):
+            with st.spinner("L'IA sta analizzando le tue keyword..."):
+                # Prendiamo la prima keyword dalle Quick Wins
+                top_keyword = quick_wins.iloc[0]['Query']
+                posizione = quick_wins.iloc[0]['Posizione']
+                ctr = 0.05 # Esempio
+        
+                suggerimento = generate_seo_suggestions(top_keyword, posizione, ctr)
+                st.markdown("### 💡 Suggerimenti IA")
+                st.write(suggerimento)
+        
     with tab3:
         st.subheader("Audit Automatico delle Pagine")
         
