@@ -14,17 +14,7 @@ st.sidebar.header("Carica i Dati")
 uploaded_query = st.sidebar.file_uploader("Carica Query.csv", type=['csv'])
 uploaded_pages = st.sidebar.file_uploader("Carica Pagine.csv", type=['csv'])
 uploaded_grafico = st.sidebar.file_uploader("Carica Grafico.csv", type=['csv'])
-st.sidebar.header("Filtri Avanzati")
-# Converti Data in datetime
-df['Data'] = pd.to_datetime(df['Data'])
 
-# Slider per le date
-min_date = df['Data'].min()
-max_date = df['Data'].max()
-start_date, end_date = st.sidebar.date_input("Seleziona periodo", [min_date, max_date])
-
-# Filtra il df
-df = df[(df['Data'].dt.date >= start_date) & (df['Data'].dt.date <= end_date)]
 
 # 2. Logica: se l'utente carica i file, usa quelli. Se no, usa quelli di default (se esistono)
 if uploaded_query and uploaded_pages and uploaded_grafico:
