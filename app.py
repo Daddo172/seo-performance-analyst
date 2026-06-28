@@ -143,8 +143,21 @@ if uploaded_query and uploaded_pages and uploaded_grafico:
         st.write("Analizza le pagine con il SEO Score più basso (visibili nella Tab 3) e aggiorna i contenuti con informazioni più recenti o approfondite.")
 
         # Bottone di export per il cliente
-        if st.button("📥 Esporta Piano d'Azione in CSV"):
-            st.download_button("Scarica Piano", data=quick_wins.to_csv(index=False), file_name="piano_azione.csv")
+        t.subheader("📥 Esporta Report Strategico")
+    
+        # Generiamo il report
+        report_text = generate_seo_report(df)
+        
+        # Mostriamo un'anteprima
+        st.text_area("Anteprima Report", value=report_text, height=300)
+        
+        # Bottone di download
+        st.download_button(
+            label="Scarica Report come .txt",
+            data=report_text,
+            file_name="Report_SEO_Strategico.txt",
+            mime="text/plain"
+        )
 else:
     st.info("👋 Carica i file richiesti nella barra laterale per iniziare l'analisi.")
     st.stop() # Ferma l'esecuzione finché non ci sono i file

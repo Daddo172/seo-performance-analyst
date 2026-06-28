@@ -82,5 +82,30 @@ def diagnose_page(row):
     else:
         return "⚖️ Standard: Monitorare"
 
+def generate_seo_report(df):
+    """Genera un riassunto testuale delle performance"""
+    total_clicks = df['Clic'].sum()
+    best_query = df.loc[df['Clic'].idxmax(), 'Query']
+    quick_wins = df[(df['Posizione'] > 10) & (df['Posizione'] <= 20)]
+    
+    report = f"""
+    --- REPORT SEO AUTOMATIZZATO ---
+    Data Generazione: {pd.Timestamp.now().strftime('%Y-%m-%d')}
+    
+    RIEPILOGO PERFORMANCE:
+    - Totale Clic generati: {total_clicks}
+    - Keyword Top Performer: '{best_query}'
+    
+    OPPORTUNITA' IMMEDIATE:
+    - Hai {len(quick_wins)} keyword in seconda pagina. 
+      Ottimizzare queste pagine potrebbe portare un incremento di traffico stimato del 15-20%.
+    
+    AZIONI CONSIGLIATE:
+    1. Revisione dei Meta Title per le keyword in Quick Wins.
+    2. Analisi della User Intent per le pagine con basso CTR.
+    --------------------------------
+    """
+    return report
+
 def get_seo_opportunities(df):
     return df[(df['Posizione'] > 10) & (df['Posizione'] <= 20)].sort_values('Impressioni', ascending=False)
