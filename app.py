@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from src.ai_seo import generate_seo_suggestions
-from src.processor import add_seo_score, diagnose_page, get_actionable_insight , load_query, load_pages, load_date
+from src.processor import add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date
 
 # Configurazione Pagina
 st.set_page_config(page_title="SEO Strategy Dashboard", layout="wide")
