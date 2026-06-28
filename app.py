@@ -176,10 +176,15 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
         col3.metric("Criticità Alte", critiche_alte)
         col4.metric("Punteggio SEO", f"{punteggio_seo}/100")
         st.write("---")
-        st.write("### Top 5 Problemi da inserire nel Report:")
-        top_problemi = df_pages.sort_values('SEO_Score').head(5)
+        st.write("### 🚨 Top 5 Problemi da inserire nel Report:")
+        
+        # 1. Reset dell'indice per avere numeri da 1 a 5 puliti
+        top_problemi = df_pages.sort_values('SEO_Score').head(5).reset_index(drop=True)
+        
+        # 2. Ciclo for migliorato
         for i, row in top_problemi.iterrows():
-         st.write(f"{i+1}. Pagina {row['Pagina'][:30]}... -> Score: {row['SEO_Score']}")
+            # Usiamo st.markdown per rendere il link cliccabile se è un URL
+            st.markdown(f"**{i+1}.** [{row['Pagina'][:40]}...]({row['Pagina']}) - Score: **{row['SEO_Score']}**")
     with tab7: # Analisi Geografica
         st.subheader("🌍 Analisi per Paese")
 
