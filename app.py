@@ -165,11 +165,23 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
     with tab7: # Analisi Geografica
         st.subheader("🌍 Analisi per Paese")
 
-        # Grafico a barre orizzontali (più leggibile per i nomi dei paesi)
-        fig_p = px.bar(df_paesi.sort_values('Clic', ascending=True), 
-                    x='Clic', y='Paese', orientation='h', title="Clic per Paese")
+         # --- FILTRO DINAMICO ---
+        min_clic = st.sidebar.slider("Numero minimo di clic per mostrare il paese", 
+                                    min_value=0, 
+                                    max_value=int(df_paesi['Clic'].max()), 
+                                    value=10) # Default a 10 clic
+        
+        # Filtriamo il dataframe
+        df_filtered = df_paesi[df_paesi['Clic'] >= min_clic]
+        
+        # Grafico pulito
+        fig_p = px.bar(df_filtered.sort_values('Clic', ascending=True), 
+                    x='Clic', y='Paese', orientation='h', 
+                    title=f"Paesi con almeno {min_clic} clic",
+                    color='Clic', 
+                    color_continuous_scale='Blues')
         st.plotly_chart(fig_p, use_container_width=True)
-
+        st.write(f"Stai visualizzando {len(df_filtered)} paesi su un totale di {len(df_paesi)}. I paesi con meno di {min_clic} clic sono stati esclusi dall'analisi.")
     with tab8: # Analisi Dispositivi
         st.subheader("📱 Analisi per Dispositivo")
         
