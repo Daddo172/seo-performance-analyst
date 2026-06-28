@@ -48,6 +48,16 @@ def load_pages(filepath):
     df.columns = ['Pagina', 'Clic', 'Impressioni', 'CTR', 'Posizione']
     return clean_gsc_common(df)
 
+def load_countries(filepath):
+    df = pd.read_csv(filepath, quotechar='"', on_bad_lines='skip')
+    df.columns = ['Paese', 'Clic', 'Impressioni', 'CTR', 'Posizione']
+    return clean_gsc_common(df)
+
+def load_devices(filepath):
+    df = pd.read_csv(filepath, quotechar='"', on_bad_lines='skip')
+    df.columns = ['Dispositivo', 'Clic', 'Impressioni', 'CTR', 'Posizione']
+    return clean_gsc_common(df)
+
 def add_seo_score(df):
     # Gestione sicura per evitare divisioni per zero
     pos_clean = df['Posizione'].replace(0, 100) # Se posizione è 0, mettiamo un valore basso

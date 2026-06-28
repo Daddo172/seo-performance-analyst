@@ -35,7 +35,7 @@ if uploaded_query and uploaded_pages and uploaded_grafico:
     df['Traffico_Mancante'] = (df['Traffico_Potenziale'] - df['Clic']).clip(lower=0)
 
     # --- LAYOUT DASHBOARD ---
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📊 Panoramica", "🎯 Strategia", "📈 Pagine", "⚖️ Salute SEO", "⏳ Trend", "📋 Piano d'Azione"])
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(["📊 Panoramica", "🎯 Strategia", "📈 Pagine", "⚖️ Salute SEO", "⏳ Trend", "📋 Piano d'Azione","🌍 Analisi per Paese" , "📱 Analisi per Dispositivo"])
 
     with tab1:
         col1, col2, col3 = st.columns(3)
@@ -158,6 +158,24 @@ if uploaded_query and uploaded_pages and uploaded_grafico:
             file_name="Report_SEO_Strategico.txt",
             mime="text/plain"
         )
+    with tab7: # Analisi Geografica
+        st.subheader("🌍 Analisi per Paese")
+        df_paesi = load_countries(uploaded_paesi) # Aggiungi l'uploader nella sidebar!
+        
+        # Grafico a barre orizzontali (più leggibile per i nomi dei paesi)
+        fig_p = px.bar(df_paesi.sort_values('Clic', ascending=True), 
+                    x='Clic', y='Paese', orientation='h', title="Clic per Paese")
+        st.plotly_chart(fig_p, use_container_width=True)
+
+    with tab8: # Analisi Dispositivi
+        st.subheader("📱 Analisi per Dispositivo")
+        df_dev = load_devices(uploaded_dispositivi)
+        
+        # Grafico a torta per vedere il mix di traffico
+        fig_d = px.pie(df_dev, names='Dispositivo', values='Clic', title="Distribuzione Clic per Dispositivo")
+        st.plotly_chart(fig_d, use_container_width=True)
+        
+        st.dataframe(df_dev, use_container_width=True)
 else:
     st.info("👋 Carica i file richiesti nella barra laterale per iniziare l'analisi.")
     st.stop() # Ferma l'esecuzione finché non ci sono i file
