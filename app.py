@@ -162,6 +162,24 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
             file_name="Report_SEO_Strategico.txt",
             mime="text/plain"
         )
+        # Calcoli per il tuo template
+        tot_pagine = len(df_pages)
+        problemi_rilevati = len(df_pages[df_pages['SEO_Score'] < 70]) # Esempio soglia
+        critiche_alte = len(df_pages[df_pages['SEO_Score'] < 30])
+        punteggio_seo = round(df_pages['SEO_Score'].mean(), 1)
+        
+        # Mostra i numeri da copiare
+        st.info("Copia questi valori nel tuo template grafico:")
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Pagine Analizzate", tot_pagine)
+        col2.metric("Problemi Rilevati", problemi_rilevati)
+        col3.metric("Criticità Alte", critiche_alte)
+        col4.metric("Punteggio SEO", f"{punteggio_seo}/100")
+        st.write("---")
+        st.write("### Top 5 Problemi da inserire nel Report:")
+        top_problemi = df_pages.sort_values('SEO_Score').head(5)
+        for i, row in top_problemi.iterrows():
+         st.write(f"{i+1}. Pagina {row['Pagina'][:30]}... -> Score: {row['SEO_Score']}")
     with tab7: # Analisi Geografica
         st.subheader("🌍 Analisi per Paese")
 
