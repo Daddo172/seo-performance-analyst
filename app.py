@@ -143,7 +143,7 @@ if uploaded_query and uploaded_pages and uploaded_grafico:
         st.write("Analizza le pagine con il SEO Score più basso (visibili nella Tab 3) e aggiorna i contenuti con informazioni più recenti o approfondite.")
 
         # Bottone di export per il cliente
-        t.subheader("📥 Esporta Report Strategico")
+        st.subheader("📥 Esporta Report Strategico")
     
         # Generiamo il report
         report_text = generate_seo_report(df)
