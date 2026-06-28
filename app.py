@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from src.ai_seo import generate_seo_suggestions
-from src.processor import add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date
+from src.processor import add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date , load_devices , load_countries
 
 # Configurazione Pagina
 st.set_page_config(page_title="SEO Strategy Dashboard", layout="wide")
@@ -14,13 +14,17 @@ st.sidebar.header("Carica i Dati")
 uploaded_query = st.sidebar.file_uploader("Carica Query.csv", type=['csv'])
 uploaded_pages = st.sidebar.file_uploader("Carica Pagine.csv", type=['csv'])
 uploaded_grafico = st.sidebar.file_uploader("Carica Grafico.csv", type=['csv'])
+uploaded_paesi = st.sidebar.file_uploader("Carica paesi.csv", type=['csv'])
+uploaded_dispositivi = st.sidebar.file_uploader("Carica dispositivi.csv", type=['csv'])
 
 
 # 2. Logica: se l'utente carica i file, usa quelli. Se no, usa quelli di default (se esistono)
-if uploaded_query and uploaded_pages and uploaded_grafico:
+if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and uploaded_dispositivi:
     df = load_query(uploaded_query) # Nota: dobbiamo aggiornare load_query sotto
     df_pages = add_seo_score(load_pages(uploaded_pages))
     df_date = load_date(uploaded_grafico) 
+    df_paesi = load_countries(uploaded_paesi)
+    df_dev = load_devices(uploaded_dispositivi)
     st.success("Dati caricati correttamente!")
 
     # --- LOGICA DI BUSINESS ---
@@ -160,8 +164,7 @@ if uploaded_query and uploaded_pages and uploaded_grafico:
         )
     with tab7: # Analisi Geografica
         st.subheader("🌍 Analisi per Paese")
-        df_paesi = load_countries(uploaded_paesi) # Aggiungi l'uploader nella sidebar!
-        
+
         # Grafico a barre orizzontali (più leggibile per i nomi dei paesi)
         fig_p = px.bar(df_paesi.sort_values('Clic', ascending=True), 
                     x='Clic', y='Paese', orientation='h', title="Clic per Paese")
@@ -169,7 +172,6 @@ if uploaded_query and uploaded_pages and uploaded_grafico:
 
     with tab8: # Analisi Dispositivi
         st.subheader("📱 Analisi per Dispositivo")
-        df_dev = load_devices(uploaded_dispositivi)
         
         # Grafico a torta per vedere il mix di traffico
         fig_d = px.pie(df_dev, names='Dispositivo', values='Clic', title="Distribuzione Clic per Dispositivo")
