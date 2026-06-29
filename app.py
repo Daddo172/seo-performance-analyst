@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from src.ai_seo import get_search_intent,generate_seo_suggestions
-from src.processor import get_competitor_gap ,analyze_content_decay,calculate_keyword_difficulty,perform_technical_audit, analyze_crawl_efficiency ,perform_technical_audit,add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date , load_devices , load_countries
+from src.processor import get_competitor_gap ,create_master_dataframe,analyze_content_decay,calculate_keyword_difficulty,perform_technical_audit, analyze_crawl_efficiency ,perform_technical_audit,add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date , load_devices , load_countries
 from src.broken_links import check_broken_links
 from src.technical_audit import check_ssl
 
@@ -218,10 +218,10 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
         st.plotly_chart(fig_date, use_container_width=True)
         st.dataframe(df_date.tail(7), use_container_width=True)
         st.subheader("🎯 Rank Tracker: Evoluzione Keyword")
-    
+        df_master = pd.merge(df, df_pages, on=['Data', 'Clic', 'Impressioni', 'CTR', 'Posizione'], how='outer')
         # Assicuriamoci di avere i dati temporali (df_date deve avere Query, Data, Posizione)
         # Se il tuo file ha anche le Query, carichiamo quello come df_tracker
-        df_tracker = load_query('data/Date.csv') # Assicurati che contenga la colonna 'Query' e 'Data'
+        df_tracker = load_query(df_master) # Assicurati che contenga la colonna 'Query' e 'Data'
         
         # 1. Filtro per selezionare la keyword
         unique_queries = df_tracker['Query'].unique()
