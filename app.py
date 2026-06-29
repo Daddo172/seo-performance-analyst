@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from src.ai_seo import generate_seo_suggestions
-from src.processor import perform_technical_audit, analyze_crawl_efficiency ,perform_technical_audit,add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date , load_devices , load_countries
+from src.processor import calculate_keyword_difficulty,perform_technical_audit, analyze_crawl_efficiency ,perform_technical_audit,add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date , load_devices , load_countries
 from src.broken_links import check_broken_links
 from src.technical_audit import check_ssl
 
@@ -63,6 +63,24 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
         st.subheader("📋 Lista Priorità d'Azione (Quick Wins)")
         quick_wins = df[df['Categoria'] == 'Quick Wins (2a Pagina)'].sort_values('Traffico_Mancante', ascending=False)
         st.dataframe(quick_wins[['Query', 'Posizione', 'Impressioni', 'Traffico_Mancante']], use_container_width=True)
+        st.subheader("📊 Analisi Difficoltà Keyword")
+        df = calculate_keyword_difficulty(df)
+        
+        # Visualizziamo una tabella che mostra quali keyword sono "Easy Win" (Bassa Difficoltà, Alto Traffico)
+        df_sorted = df.sort_values('Keyword_Difficulty')
+        
+        st.dataframe(
+            df_sorted[['Query', 'Impressioni', 'Keyword_Difficulty']],
+            column_config={
+                "Keyword_Difficulty": st.column_config.ProgressColumn(
+                    "Difficoltà (0-100)",
+                    format="%.0f",
+                    min_value=0,
+                    max_value=100,
+                ),
+            },
+            use_container_width=True
+        )
         st.subheader("🤖 Assistente Strategico SEO")
     
         # 1. Inizializziamo lo stato della chat se non esiste

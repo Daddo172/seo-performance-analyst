@@ -140,6 +140,22 @@ def analyze_crawl_efficiency(df_pages):
     df_pages['Crawl_Depth'] = df_pages['Crawl_Depth'].clip(lower=0)
     return df_pages
 
+def calculate_keyword_difficulty(df):
+    """
+    Stima la difficoltà di una keyword (0-100)
+    Formula basata su: Impressioni (Volume), Posizione (Competizione), CTR
+    """
+    # 1. Normalizziamo i fattori
+    # Più impressioni = più competizione (logaritmico)
+    vol_factor = (df['Impressioni'] / df['Impressioni'].max()) * 50
+    # Più la posizione è alta (es. 20), più è difficile scalare
+    pos_factor = (df['Posizione'] / df['Posizione'].max()) * 30
+    # Più il CTR è basso, più la competizione è agguerrita
+    ctr_factor = (1 - df['CTR']) * 20
+    
+    df['Keyword_Difficulty'] = (vol_factor + pos_factor + ctr_factor).clip(0, 100)
+    return df
+
 def perform_technical_audit(df_pages):
     """Diagnostica lo stato tecnico delle pagine"""
     audit = []
