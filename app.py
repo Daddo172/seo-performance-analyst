@@ -218,7 +218,7 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
         st.plotly_chart(fig_date, use_container_width=True)
         st.dataframe(df_date.tail(7), use_container_width=True)
         st.subheader("🎯 Rank Tracker: Evoluzione Keyword")
-        df_tracker = load_query(df_date) # Assicurati che contenga la colonna 'Query' e 'Data'
+        df_tracker = df_date# Assicurati che contenga la colonna 'Query' e 'Data'
         
         # 1. Filtro per selezionare la keyword
         unique_queries = df_tracker['Query'].unique()
