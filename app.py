@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from src.ai_seo import generate_seo_suggestions
-from src.processor import get_competitor_gap,calculate_keyword_difficulty,perform_technical_audit, analyze_crawl_efficiency ,perform_technical_audit,add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date , load_devices , load_countries
+from src.processor import get_search_intent,get_competitor_gap,calculate_keyword_difficulty,perform_technical_audit, analyze_crawl_efficiency ,perform_technical_audit,add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date , load_devices , load_countries
 from src.broken_links import check_broken_links
 from src.technical_audit import check_ssl
 
@@ -92,6 +92,14 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
             },
             use_container_width=True
         )
+        if st.button("🔍 Analizza Search Intent per le Quick Wins"):
+            with st.spinner("L'IA sta analizzando l'intento delle keyword..."):
+                # Applichiamo la funzione solo alle Quick Wins
+                quick_wins = df[df['Categoria'] == 'Quick Wins (2a Pagina)'].head(10).copy()
+                quick_wins['Intent'] = quick_wins['Query'].apply(get_search_intent)
+                
+                st.write("### Keyword Classificate per Intento")
+                st.dataframe(quick_wins[['Query', 'Intent', 'Impressioni']])
         st.subheader("🤖 Assistente Strategico SEO")
     
         # 1. Inizializziamo lo stato della chat se non esiste
