@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from src.ai_seo import generate_seo_suggestions
-from src.processor import calculate_keyword_difficulty,perform_technical_audit, analyze_crawl_efficiency ,perform_technical_audit,add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date , load_devices , load_countries
+from src.processor import get_competitor_gap,calculate_keyword_difficulty,perform_technical_audit, analyze_crawl_efficiency ,perform_technical_audit,add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date , load_devices , load_countries
 from src.broken_links import check_broken_links
 from src.technical_audit import check_ssl
 
@@ -45,7 +45,7 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
     df['Traffico_Mancante'] = (df['Traffico_Potenziale'] - df['Clic']).clip(lower=0)
 
     # --- LAYOUT DASHBOARD ---
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9,tab10 = st.tabs(["📊 Panoramica", "🎯 Strategia", "📈 Pagine", "⚖️ Salute SEO", "⏳ Trend", "📋 Piano d'Azione","🌍 Analisi per Paese" , "📱 Analisi per Dispositivo","🛠 Technical SEO Audit","🔗 Controllo Integrità & Sicurezza"])
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9,tab10 , tab11 = st.tabs(["📊 Panoramica", "🎯 Strategia", "📈 Pagine", "⚖️ Salute SEO", "⏳ Trend", "📋 Piano d'Azione","🌍 Analisi per Paese" , "📱 Analisi per Dispositivo","🛠 Technical SEO Audit","🔗 Controllo Integrità & Sicurezza","⚔️ Analisi Competitiva (Gap Analysis)"])
 
     with tab1:
         col1, col2, col3 = st.columns(3)
@@ -311,7 +311,34 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
                     st.write(broken)
                 else:
                     st.success("Tutti i link funzionano!")
-
+    with tab11: # Tab Analisi Competitiva
+        st.subheader("⚔️ Analisi Competitiva (Gap Analysis)")
+        # --- ESPANDER STRATEGICO ---
+        with st.expander("💡 Perché l'analisi competitiva è cruciale?"):
+            st.write("""
+            Il confronto con i competitor non serve a copiare, ma a **trovare il tuo spazio di mercato**. 
+            Attraverso questa analisi identifichiamo il **Content Gap**:
+            1. **Keyword Opportunità:** Parole chiave per cui il concorrente è posizionato ma tu no.
+            2. **Validazione di Mercato:** Se un concorrente riceve traffico su una specifica query, significa che c'è una domanda reale che puoi intercettare.
+            3. **Focus Strategico:** Non sprecare tempo su parole chiave troppo difficili (High Difficulty), concentrati su quelle dove il concorrente ha una posizione debole (11-20).
+            """)
+        col_c1, col_c2 = st.columns(2)
+        with col_c1:
+            file_cliente = st.file_uploader("Carica CSV Cliente", type=['csv'], key="cliente")
+        with col_c2:
+            file_comp = st.file_uploader("Carica CSV Competitor", type=['csv'], key="competitor")
+            
+        if file_cliente and file_comp:
+            df_c = load_query(file_cliente)
+            df_comp = load_query(file_comp)
+            
+            # Gap Analysis
+            gap = get_competitor_gap(df_c, df_comp)
+            
+            st.write("### 🚩 Keyword dove il concorrente ti sta superando:")
+            st.dataframe(gap[['Query', 'Impressioni', 'Posizione']], use_container_width=True)
+            
+            st.info("💡 Consiglio: Crea contenuti specifici per queste keyword. Sono il motivo per cui il tuo concorrente sta catturando traffico che potrebbe essere tuo.")
 
 
 

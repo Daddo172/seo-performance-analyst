@@ -133,6 +133,13 @@ def perform_technical_audit(df_pages):
         })
     return pd.DataFrame(audit)
 
+def get_competitor_gap(df_cliente, df_competitor):
+    """Trova le keyword del competitor che il cliente non ha"""
+    # Prendiamo le query del competitor che non sono presenti nelle query del cliente
+    query_cliente = set(df_cliente['Query'].str.lower())
+    gap = df_competitor[~df_competitor['Query'].str.lower().isin(query_cliente)]
+    return gap.sort_values('Impressioni', ascending=False)
+
 def analyze_crawl_efficiency(df_pages):
     """Calcola quanto è profonda una pagina nella struttura del sito"""
     # Profondità basata sul numero di slash (es. /a/b/c/d/ = 4 livelli)
