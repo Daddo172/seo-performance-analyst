@@ -34,8 +34,7 @@ Il sistema è costruito attorno a una pipeline modulare:
     Informativa, Transazionale o Navigazionale.
   - Crawl Efficiency: Modulo di monitoraggio della struttura dei link interni e
     controllo dell'integrità (Broken Links / HTTPS).
-  - Automazione: Pipeline di CI/CD tramite GitHub Actions per l'integrazione e
-    il deployment continuo.
+
 
 📈 Roadmap & Sviluppi Futuri
 
@@ -45,7 +44,7 @@ Il sistema è costruito attorno a una pipeline modulare:
 - [ ] Predizione: Implementazione di modelli di Machine Learning per la
   previsione del traffico futuro.
 - [ ] SaaS Deployment: Espansione del tool per permettere l'analisi in modalità
-  multi-utente in cloud.
+  multi-utente in cloud con modalità di salvataggio report con account personale.
 
 💻 Tech Stack
 
