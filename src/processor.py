@@ -1,6 +1,4 @@
 import pandas as pd
-import google.generativeai as genai
-import os
 
 def clean_gsc_common(df):
     """Funzione di pulizia base usata da tutti i caricamenti"""
@@ -181,25 +179,6 @@ def perform_technical_audit(df_pages):
         })
     return pd.DataFrame(audit)
 
-def get_search_intent(query):
-    # Usiamo il modello Flash che è velocissimo ed economico
-    model = genai.GenerativeModel('gemini-1.5-flash')
-    
-    prompt = f"""
-    Classifica la seguente keyword SEO in una di queste 3 categorie:
-    - Informativa (L'utente cerca informazioni, guide, risposte)
-    - Transazionale (L'utente vuole comprare o prenotare)
-    - Navigazionale (L'utente cerca un sito specifico)
-    
-    Keyword: "{query}"
-    Rispondi solo con la categoria.
-    """
-    
-    try:
-        response = model.generate_content(prompt)
-        return response.text.strip()
-    except:
-        return "Non classificabile"
     
 def get_seo_opportunities(df):
     return df[(df['Posizione'] > 10) & (df['Posizione'] <= 20)].sort_values('Impressioni', ascending=False)

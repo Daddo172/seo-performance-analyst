@@ -25,3 +25,26 @@ def generate_seo_suggestions(query, posizione, ctr):
     
     response = model.generate_content(prompt)
     return response.text
+
+def get_search_intent(query):
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    
+    prompt = f"""
+    Sei un esperto SEO. Classifica la keyword fornita in UNA di queste categorie: "Informativa", "Transazionale", "Navigazionale".
+    
+    Esempi:
+    - "ristorante roma" -> Transazionale
+    - "come cucinare la pasta" -> Informativa
+    - "sito ufficiale volpe pasini" -> Navigazionale
+    
+    Keyword da classificare: "{query}"
+    Rispondi SOLTANTO con la categoria, nessuna spiegazione.
+    """
+    
+    try:
+        response = model.generate_content(prompt)
+        result = response.text.strip()
+        # Pulizia: se l'IA aggiunge punti o spazi
+        return result.replace('.', '').strip()
+    except:
+        return "Errore IA"
