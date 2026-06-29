@@ -147,7 +147,7 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
         
         # 4. Tabella Audit
         st.write("### Dettaglio Audit Tecnico")
-        show_only_issues = st.checkbox("Mostra solo pagine con criticità")
+        show_only_issues = st.checkbox("Mostra solo pagine con criticità", key="audit_check")
         if show_only_issues:
             audit_df = audit_df[audit_df['Stato'] == "🚨"]
             
