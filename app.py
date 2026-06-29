@@ -4,6 +4,7 @@ import plotly.express as px
 from src.ai_seo import generate_seo_suggestions
 from src.processor import perform_technical_audit, analyze_crawl_efficiency ,perform_technical_audit,add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date , load_devices , load_countries
 from src.broken_links import check_broken_links
+from src.technical_audit import check_ssl
 
 # Configurazione Pagina
 st.set_page_config(page_title="SEO Strategy Dashboard", layout="wide")
@@ -44,7 +45,7 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
     df['Traffico_Mancante'] = (df['Traffico_Potenziale'] - df['Clic']).clip(lower=0)
 
     # --- LAYOUT DASHBOARD ---
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs(["📊 Panoramica", "🎯 Strategia", "📈 Pagine", "⚖️ Salute SEO", "⏳ Trend", "📋 Piano d'Azione","🌍 Analisi per Paese" , "📱 Analisi per Dispositivo","🛠 Technical SEO Audit"])
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9,tab10 = st.tabs(["📊 Panoramica", "🎯 Strategia", "📈 Pagine", "⚖️ Salute SEO", "⏳ Trend", "📋 Piano d'Azione","🌍 Analisi per Paese" , "📱 Analisi per Dispositivo","🛠 Technical SEO Audit","🔗 Controllo Integrità & Sicurezza"])
 
     with tab1:
         col1, col2, col3 = st.columns(3)
@@ -264,6 +265,27 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
         st.table(audit_df)
         
         st.info("💡 Questo Audit scansiona le pagine identificando dove il motore di ricerca incontra difficoltà.")
+    with tab10:
+        st.subheader("🔗 Controllo Integrità & Sicurezza")
+        target_url = st.text_input("Inserisci URL del sito", "https://www.volpepasinibistroitaliano.it/")
+        
+        if st.button("Avvia Audit Tecnico"):
+            with st.spinner("Analisi in corso..."):
+                # Controllo SSL
+                status_ssl = check_ssl(target_url)
+                st.metric("Stato Sicurezza", status_ssl)
+                
+                # Controllo Broken Links
+                broken = check_broken_links(target_url)
+                if broken:
+                    st.error(f"Trovati {len(broken)} link rotti!")
+                    st.write(broken)
+                else:
+                    st.success("Tutti i link funzionano!")
+
+
+
+
 else:
     st.info("👋 Carica i file richiesti nella barra laterale per iniziare l'analisi.")
     st.stop() # Ferma l'esecuzione finché non ci sono i file
