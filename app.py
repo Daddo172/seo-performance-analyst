@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from src.ai_seo import generate_seo_suggestions
-from src.processor import perform_technical_audit,add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date , load_devices , load_countries
+from src.processor import perform_technical_audit, analyze_crawl_efficiency ,perform_technical_audit,add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date , load_devices , load_countries
 from src.broken_links import check_broken_links
 
 # Configurazione Pagina
@@ -131,7 +131,29 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
         else: st.warning("Attenzione: Il sito necessita di ottimizzazione.")
         insight_seo = get_actionable_insight(df_pages, "Salute SEO")
         st.warning(f"🎯 **Consiglio per il cliente:** {insight_seo}")
-
+        st.subheader("🛠 Technical SEO Audit & Crawl Budget")
+    
+        # 1. Analisi Profondità
+        df_pages = analyze_crawl_efficiency(df_pages)
+        
+        # 2. Audit Diagnostico
+        audit_df = perform_technical_audit(df_pages)
+        
+        # 3. Visualizzazione KPI
+        col1, col2 = st.columns(2)
+        deep_pages = df_pages[df_pages['Crawl_Depth'] > 3]
+        col1.metric("Pagine scansionate", len(df_pages))
+        col2.metric("Pagine a rischio 'profondità'", len(deep_pages))
+        
+        # 4. Tabella Audit
+        st.write("### Dettaglio Audit Tecnico")
+        show_only_issues = st.checkbox("Mostra solo pagine con criticità")
+        if show_only_issues:
+            audit_df = audit_df[audit_df['Stato'] == "🚨"]
+            
+        st.dataframe(audit_df, use_container_width=True)
+        
+        st.info("💡 Una 'Crawl Depth' > 3 indica pagine difficili da raggiungere per i bot di Google.")
     with tab5:
         st.subheader("📈 Analisi Temporale")
         fig_date = px.line(df_date, x='Data', y='Clic', title="Andamento Clic nel Tempo", markers=True)

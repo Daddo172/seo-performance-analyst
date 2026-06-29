@@ -133,5 +133,28 @@ def perform_technical_audit(df_pages):
         })
     return pd.DataFrame(audit)
 
+def analyze_crawl_efficiency(df_pages):
+    """Calcola quanto è profonda una pagina nella struttura del sito"""
+    # Profondità basata sul numero di slash (es. /a/b/c/d/ = 4 livelli)
+    df_pages['Crawl_Depth'] = df_pages['Pagina'].str.count('/') - 2
+    df_pages['Crawl_Depth'] = df_pages['Crawl_Depth'].clip(lower=0)
+    return df_pages
+
+def perform_technical_audit(df_pages):
+    """Diagnostica lo stato tecnico delle pagine"""
+    audit = []
+    for _, row in df_pages.iterrows():
+        issues = []
+        if row['CTR'] < 0.01: issues.append("CTR Basso")
+        if row['Posizione'] > 30: issues.append("Posizione Critica")
+        if row.get('Crawl_Depth', 0) > 3: issues.append("Troppo profonda")
+        
+        audit.append({
+            'Pagina': row['Pagina'],
+            'Problemi': ", ".join(issues) if issues else "OK",
+            'Stato': "🚨" if issues else "✅"
+        })
+    return pd.DataFrame(audit)
+
 def get_seo_opportunities(df):
     return df[(df['Posizione'] > 10) & (df['Posizione'] <= 20)].sort_values('Impressioni', ascending=False)
