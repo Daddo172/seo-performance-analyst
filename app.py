@@ -114,10 +114,10 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
                 st.write("### Keyword Classificate per Intento")
                 st.dataframe(quick_wins[['Query', 'Intent', 'Impressioni']])
         
-        # Esempio grafico di distribuzione
-        intent_counts = quick_wins['Intent'].value_counts().reset_index()
-        fig_intent = px.pie(intent_counts, values='count', names='Intent', title="Distribuzione degli Intenti nelle Quick Wins")
-        st.plotly_chart(fig_intent, use_container_width=True)
+            # Esempio grafico di distribuzione
+            intent_counts = quick_wins['Intent'].value_counts().reset_index()
+            fig_intent = px.pie(intent_counts, values='count', names='Intent', title="Distribuzione degli Intenti nelle Quick Wins")
+            st.plotly_chart(fig_intent, use_container_width=True)
         st.subheader("🤖 Assistente Strategico SEO")
     
         # 1. Inizializziamo lo stato della chat se non esiste
