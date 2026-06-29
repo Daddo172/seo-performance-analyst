@@ -92,6 +92,19 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
             },
             use_container_width=True
         )
+        st.subheader("🤖 Analisi Intento di Ricerca (AI-Powered)")
+        
+        with st.expander("❓ Come funziona l'IA di analisi intenti?"):
+            st.write("""
+            Questa funzione utilizza modelli di Intelligenza Artificiale Generativa (LLM) per analizzare il **linguaggio naturale** delle tue parole chiave:
+            
+            *   **Informativa:** L'utente sta cercando risposte o guide (es. 'come fare pasta fresca'). Sono keyword ottime per il blog.
+            *   **Transazionale:** L'utente ha il portafoglio in mano (es. 'prenota tavolo Roma'). Queste sono le tue priorità assolute per vendere.
+            *   **Navigazionale:** L'utente cerca già il tuo brand specifico.
+            
+            **Perché lo facciamo?** Perché non tutti i clic valgono lo stesso. Puntare sulle keyword *Transazionali* significa aumentare direttamente le conversioni del tuo business.
+            """)
+        
         if st.button("🔍 Analizza Search Intent per le Quick Wins"):
             with st.spinner("L'IA sta analizzando l'intento delle keyword..."):
                 # Applichiamo la funzione solo alle Quick Wins
