@@ -27,7 +27,7 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
     df_dev = load_devices(uploaded_dispositivi)
     st.success("Dati caricati correttamente!")
     total_pages = len(df_pages)
-    healthy_pages = len(df_pages[df_pages['SEO_Score'] > 60])
+    healthy_pages = len(df_pages[df_pages['SEO_Score'] > 50])
     global_health = (healthy_pages / total_pages) * 100
 
     st.sidebar.metric("Salute Globale Sito", f"{global_health:.1f}%")
@@ -111,6 +111,17 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
             },
             use_container_width=True
         )
+        st.subheader("🔗 Controllo Link Rotti (Broken Links)")
+        target_url = st.text_input("Inserisci URL del sito da scansionare", "https://www.volpepasinibistroitaliano.it/")
+        
+        if st.button("Avvia Scansione"):
+            with st.spinner("Scansionando il sito..."):
+                broken = check_broken_links(target_url)
+                if broken:
+                    st.error(f"Trovati {len(broken)} link rotti!")
+                    st.write(broken)
+                else:
+                    st.success("Tutti i link funzionano correttamente!")
 
     with tab4:
         avg_score = df_pages['SEO_Score'].mean()
