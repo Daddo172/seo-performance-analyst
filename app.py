@@ -120,32 +120,34 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
             st.plotly_chart(fig_intent, use_container_width=True)
         st.subheader("🤖 Assistente Strategico SEO")
     
-        # 1. Inizializziamo lo stato della chat se non esiste
+        # 1. Inizializza la cronologia della chat
         if "messages" not in st.session_state:
             st.session_state.messages = []
 
-        # 2. Mostriamo i messaggi passati
+        # 2. Mostra i messaggi passati
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
-    
-        # 3. Input dell'utente
-        if prompt := st.chat_input("Chiedi all'IA un consiglio su una keyword..."):
-            # Mostriamo il messaggio dell'utente
+
+        # 3. L'input dell'utente (è questo che "sblocca" l'IA, non un bottone automatico)
+        if prompt := st.chat_input("Chiedi consiglio su una keyword (es: 'volpe pasini bistro')"):
+            
+            # Aggiungi il messaggio dell'utente alla cronologia
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
                 st.markdown(prompt)
 
-        # 4. Risposta dell'IA
-        with st.chat_message("assistant"):
-            with st.spinner("Sto elaborando..."):
-                # Qui richiamiamo la funzione che abbiamo creato
-                response = generate_seo_suggestions(prompt, posizione=10, ctr=0.02) 
-                st.markdown(response)
-        
-        # Salviamo la risposta
-        st.session_state.messages.append({"role": "assistant", "content": response})
-        
+            # 4. Risposta dell'IA
+            with st.chat_message("assistant"):
+                with st.spinner("L'IA sta analizzando..."):
+                    # Qui richiami l'IA passando il prompt dell'utente
+                    # Assicurati che generate_seo_suggestions prenda il prompt
+                    response = generate_seo_suggestions(prompt, 0, 0) # Posizione e CTR di default
+                    st.markdown(response)
+            
+            # Aggiungi la risposta alla cronologia
+            st.session_state.messages.append({"role": "assistant", "content": response})
+            
     with tab3:
         st.subheader("Audit Automatico delle Pagine")
         
