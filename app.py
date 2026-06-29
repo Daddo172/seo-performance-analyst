@@ -322,6 +322,12 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
             2. **Validazione di Mercato:** Se un concorrente riceve traffico su una specifica query, significa che c'è una domanda reale che puoi intercettare.
             3. **Focus Strategico:** Non sprecare tempo su parole chiave troppo difficili (High Difficulty), concentrati su quelle dove il concorrente ha una posizione debole (11-20).
             """)
+        #Per testare la tua dashboard e mostrare che funziona, devi simulare il comportamento.
+        #Prendi un sito concorrente.
+        #Vai su uno strumento di analisi SEO gratuito (es. la versione free di Ubersuggest, Ahrefs Free Keyword Generator o SEOZoom).
+        #Inserisci il dominio del concorrente.
+        #Questi siti ti daranno una lista di "Top Keyword" del concorrente. Esporta quella lista in CSV.
+        #Ora hai il file Competitor.csv da caricare nella tua dashboard
         col_c1, col_c2 = st.columns(2)
         with col_c1:
             file_cliente = st.file_uploader("Carica CSV Cliente", type=['csv'], key="cliente")
