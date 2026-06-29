@@ -217,6 +217,28 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
         fig_date = px.line(df_date, x='Data', y='Clic', title="Andamento Clic nel Tempo", markers=True)
         st.plotly_chart(fig_date, use_container_width=True)
         st.dataframe(df_date.tail(7), use_container_width=True)
+        st.subheader("🎯 Rank Tracker: Evoluzione Keyword")
+    
+        # Assicuriamoci di avere i dati temporali (df_date deve avere Query, Data, Posizione)
+        # Se il tuo file ha anche le Query, carichiamo quello come df_tracker
+        df_tracker = load_query('data/Date.csv') # Assicurati che contenga la colonna 'Query' e 'Data'
+        
+        # 1. Filtro per selezionare la keyword
+        unique_queries = df_tracker['Query'].unique()
+        selected_query = st.selectbox("Seleziona una Keyword per vedere il trend:", unique_queries)
+        
+        # 2. Filtriamo i dati
+        query_data = df_tracker[df_tracker['Query'] == selected_query]
+        
+        # 3. Grafico del Trend (Posizione invertita: 1 è in alto, 100 in basso)
+        fig_rank = px.line(query_data, x='Data', y='Posizione', 
+                        title=f"Trend di posizionamento: '{selected_query}'",
+                        markers=True)
+        
+        # Invertiamo l'asse Y: vogliamo che la posizione 1 (la migliore) sia in alto
+        fig_rank.update_yaxes(autorange="reversed")
+        
+        st.plotly_chart(fig_rank, use_container_width=True)
         st.subheader("📉 Content Decay Alert")
     
         # Carichiamo due dataset (es. ultimo mese e mese prima)
