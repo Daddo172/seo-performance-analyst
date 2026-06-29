@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from src.ai_seo import generate_seo_suggestions
-from src.processor import add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date , load_devices , load_countries
+from src.processor import perform_technical_audit,add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date , load_devices , load_countries
 
 # Configurazione Pagina
 st.set_page_config(page_title="SEO Strategy Dashboard", layout="wide")
@@ -26,7 +26,11 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
     df_paesi = load_countries(uploaded_paesi)
     df_dev = load_devices(uploaded_dispositivi)
     st.success("Dati caricati correttamente!")
+    total_pages = len(df_pages)
+    healthy_pages = len(df_pages[df_pages['SEO_Score'] > 60])
+    global_health = (healthy_pages / total_pages) * 100
 
+    st.sidebar.metric("Salute Globale Sito", f"{global_health:.1f}%")
     # --- LOGICA DI BUSINESS ---
     def classify_keyword(row):
         if row['Posizione'] <= 3: return 'Campioni (Top 3)'
@@ -39,7 +43,7 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
     df['Traffico_Mancante'] = (df['Traffico_Potenziale'] - df['Clic']).clip(lower=0)
 
     # --- LAYOUT DASHBOARD ---
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(["📊 Panoramica", "🎯 Strategia", "📈 Pagine", "⚖️ Salute SEO", "⏳ Trend", "📋 Piano d'Azione","🌍 Analisi per Paese" , "📱 Analisi per Dispositivo"])
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs(["📊 Panoramica", "🎯 Strategia", "📈 Pagine", "⚖️ Salute SEO", "⏳ Trend", "📋 Piano d'Azione","🌍 Analisi per Paese" , "📱 Analisi per Dispositivo","🛠 Technical SEO Audit"])
 
     with tab1:
         col1, col2, col3 = st.columns(3)
@@ -213,6 +217,19 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
         st.plotly_chart(fig_d, use_container_width=True)
         
         st.dataframe(df_dev, use_container_width=True)
+    with tab9: # Tab Salute SEO / Audit
+        st.subheader("🛠 Technical SEO Audit")
+        
+        audit_df = perform_technical_audit(df_pages)
+        
+        # Filtro rapido per vedere solo le pagine problematiche
+        show_only_issues = st.checkbox("Mostra solo pagine con criticità")
+        if show_only_issues:
+            audit_df = audit_df[audit_df['Stato'] == "🚨"]
+            
+        st.table(audit_df)
+        
+        st.info("💡 Questo Audit scansiona le pagine identificando dove il motore di ricerca incontra difficoltà.")
 else:
     st.info("👋 Carica i file richiesti nella barra laterale per iniziare l'analisi.")
     st.stop() # Ferma l'esecuzione finché non ci sono i file

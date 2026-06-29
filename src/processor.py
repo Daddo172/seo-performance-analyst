@@ -116,6 +116,22 @@ def generate_seo_report(df):
     --------------------------------
     """
     return report
+def perform_technical_audit(df_pages):
+    """Diagnostica lo stato tecnico delle pagine"""
+    audit = []
+    for _, row in df_pages.iterrows():
+        issues = []
+        # Controllo Criticità
+        if row['CTR'] < 0.01: issues.append("CTR molto basso (<1%)")
+        if row['Posizione'] > 30: issues.append("Posizione critica (>30)")
+        if row['Impressioni'] > 1000 and row['Posizione'] > 10: issues.append("Alta visibilità, basso ranking")
+        
+        audit.append({
+            'Pagina': row['Pagina'],
+            'Problemi': ", ".join(issues) if issues else "Nessun problema rilevato",
+            'Stato': "🚨" if issues else "✅"
+        })
+    return pd.DataFrame(audit)
 
 def get_seo_opportunities(df):
     return df[(df['Posizione'] > 10) & (df['Posizione'] <= 20)].sort_values('Impressioni', ascending=False)
