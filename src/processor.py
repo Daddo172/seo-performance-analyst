@@ -18,6 +18,22 @@ def clean_gsc_common(df):
         
     return df
 
+def analyze_content_decay(df_current, df_previous):
+    """
+    df_current: dati dell'ultimo mese
+    df_previous: dati del mese precedente
+    """
+    # Uniamo i due dataframe sulla colonna 'Pagina'
+    df_merged = pd.merge(df_current, df_previous, on='Pagina', suffixes=('_curr', '_prev'))
+    
+    # Calcoliamo il calo di clic
+    df_merged['Variazione_Clic'] = df_merged['Clic_curr'] - df_merged['Clic_prev']
+    df_merged['Perc_Decay'] = (df_merged['Variazione_Clic'] / df_merged['Clic_prev']) * 100
+    
+    # Filtriamo solo chi ha perso più del 20% di traffico
+    decaying_pages = df_merged[df_merged['Perc_Decay'] < -20].sort_values('Perc_Decay')
+    return decaying_pages
+
 def load_query(filepath):
     # Se è un file caricato da Streamlit, dobbiamo resettare il puntatore all'inizio
     if hasattr(filepath, 'seek'):

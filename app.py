@@ -217,7 +217,22 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
         fig_date = px.line(df_date, x='Data', y='Clic', title="Andamento Clic nel Tempo", markers=True)
         st.plotly_chart(fig_date, use_container_width=True)
         st.dataframe(df_date.tail(7), use_container_width=True)
-
+        st.subheader("📉 Content Decay Alert")
+    
+        # Carichiamo due dataset (es. ultimo mese e mese prima)
+        # Nota: L'utente dovrà caricare due file CSV distinti per questo confronto
+        if st.checkbox("Analizza decadimento contenuti"):
+            file_curr = st.file_uploader("CSV Periodo Recente", type=['csv'], key="curr")
+            file_prev = st.file_uploader("CSV Periodo Precedente", type=['csv'], key="prev")
+            
+            if file_curr and file_prev:
+                df_curr = load_pages(file_curr)
+                df_prev = load_pages(file_prev)
+                
+                decay = analyze_content_decay(df_curr, df_prev)
+                
+                st.warning("🚨 Pagine in calo di traffico (>20%):")
+                st.dataframe(decay[['Pagina', 'Clic_curr', 'Clic_prev', 'Perc_Decay']])
     with tab6:
         st.subheader("📋 Piano d'Azione Prioritario")
         st.write("Segui questi step per incrementare il traffico organico del tuo sito:")
