@@ -66,6 +66,17 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
         st.subheader("📊 Analisi Difficoltà Keyword")
         df = calculate_keyword_difficulty(df)
         
+        with st.expander("❓ Cosa significa la Difficoltà Keyword?"):
+            st.write("""
+            Il punteggio di **Difficoltà (0-100)** è un indice proprietario che stima quanto è complesso posizionarsi in prima pagina per una determinata query:
+            
+            *   **0-30 (Facile):** Poca competizione. Ottimo per siti nuovi o piccoli.
+            *   **31-60 (Media):** Richiede contenuti di qualità e una strategia di backlink mirata.
+            *   **61-100 (Difficile):** Parole chiave 'corpo' (es. "ristorante Roma"). Competizione altissima, serve autorità di dominio elevata.
+            
+            **Strategia:** Focalizzati sulle keyword con **Bassa Difficoltà e Alte Impressioni** per ottenere risultati rapidi.
+            """)
+
         # Visualizziamo una tabella che mostra quali keyword sono "Easy Win" (Bassa Difficoltà, Alto Traffico)
         df_sorted = df.sort_values('Keyword_Difficulty')
         
