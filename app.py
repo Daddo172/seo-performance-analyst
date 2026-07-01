@@ -5,6 +5,7 @@ from src.ai_seo import get_search_intent,generate_seo_suggestions
 from src.processor import get_competitor_gap ,analyze_content_decay,calculate_keyword_difficulty,perform_technical_audit, analyze_crawl_efficiency ,perform_technical_audit,add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date , load_devices , load_countries
 from src.broken_links import check_broken_links
 from src.technical_audit import check_ssl
+from src.forecasting.py import train_and_forecast, perform_backtest
 
 # Configurazione Pagina
 st.set_page_config(page_title="SEO Strategy Dashboard", layout="wide")
@@ -217,6 +218,36 @@ if uploaded_query and uploaded_pages and uploaded_grafico and uploaded_paesi and
         fig_date = px.line(df_date, x='Data', y='Clic', title="Andamento Clic nel Tempo", markers=True)
         st.plotly_chart(fig_date, use_container_width=True)
         st.dataframe(df_date.tail(7), use_container_width=True)
+        st.subheader("🧪 Backtesting: Validazione del Modello")
+    
+        if st.button("Valida Modello (Backtest ultimi 30 giorni)"):
+            mape, forecast = perform_backtest(df_date)
+            
+            # Mostriamo l'errore (più basso è, meglio è!)
+            st.metric("Errore Medio (MAPE)", f"{mape:.2%}")
+            
+            if mape < 0.2:
+                st.success("Il modello è molto preciso!")
+            else:
+                st.warning("Il modello ha margini di miglioramento.")
+                
+            st.write("Confronto Previsione vs Reale:")
+            # Grafico che confronta la previsione con il dato reale
+            st.line_chart(forecast.set_index('ds')[['yhat']])
+        st.subheader("🔮 Previsione Traffico (Prossimi 7 giorni)")
+        
+        if st.button("Genera Previsione IA"):
+            with st.spinner("Addestramento modello in corso..."):
+                forecast = train_and_forecast(df_date)
+                
+                # Grafico
+                fig = px.line(forecast, x='ds', y='yhat', title="Previsione Clic futuri")
+                # Aggiungiamo l'area di incertezza (intervallo di confidenza)
+                fig.add_scatter(x=forecast['ds'], y=forecast['yhat_upper'], line=dict(width=0), showlegend=False)
+                fig.add_scatter(x=forecast['ds'], y=forecast['yhat_lower'], fill='tonexty', line=dict(width=0), showlegend=False)
+                
+                st.plotly_chart(fig, use_container_width=True)
+                st.success("Previsione completata con modello Prophet.")
         st.subheader("📉 Content Decay Alert")
     
         # Carichiamo due dataset (es. ultimo mese e mese prima)
