@@ -52,7 +52,7 @@ Il sistema è costruito attorno a una pipeline modulare:
 
   - Languages: Python
   - Libraries: Streamlit, Pandas, Plotly, SQLAlchemy, Google GenAI,
-    BeautifulSoup.
+    BeautifulSoup,prophet,scikit-learn.
   - Cloud: Streamlit Cloud, GitHub Actions.
 
 Perché questo progetto?
