@@ -5,7 +5,7 @@ from src.ai_seo import get_search_intent,generate_seo_suggestions
 from src.processor import get_competitor_gap ,analyze_content_decay,calculate_keyword_difficulty,perform_technical_audit, analyze_crawl_efficiency ,perform_technical_audit,add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date , load_devices , load_countries
 from src.broken_links import check_broken_links
 from src.technical_audit import check_ssl
-from src.forecasting.py import train_and_forecast, perform_backtest
+from src.forecasting import train_and_forecast, perform_backtest
 
 # Configurazione Pagina
 st.set_page_config(page_title="SEO Strategy Dashboard", layout="wide")
