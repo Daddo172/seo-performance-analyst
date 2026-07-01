@@ -34,6 +34,8 @@ Il sistema è costruito attorno a una pipeline modulare:
     Informativa, Transazionale o Navigazionale.
   - Crawl Efficiency: Modulo di monitoraggio della struttura dei link interni e
     controllo dell'integrità (Broken Links / HTTPS).
+  - Modello di Forecasting: Implementazione di Prophet per serie temporali con
+    validazione tramite Backtesting (MAPE score) per garantire l'accuratezza delle previsioni.
 
 
 📈 Roadmap & Sviluppi Futuri
@@ -41,7 +43,7 @@ Il sistema è costruito attorno a una pipeline modulare:
 - [x] Pipeline di Automazione: Pipeline automatizzata su GitHub Actions per il
   workflow di aggiornamento.
 - [x] Data Fusion: Integrazione file per analisi segmentata (Device/Paesi).
-- [ ] Predizione: Implementazione di modelli di Machine Learning per la
+- [x] Predizione: Implementazione di modelli di Machine Learning per la
   previsione del traffico futuro.
 - [ ] SaaS Deployment: Espansione del tool per permettere l'analisi in modalità
   multi-utente in cloud con modalità di salvataggio report con account personale.
