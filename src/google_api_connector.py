@@ -5,30 +5,28 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from google.analytics.data_v1beta import BetaAnalyticsDataClient
 from google.analytics.data_v1beta.types import DateRange, Dimension, Metric, RunReportRequest
-
+import json, base64
 import streamlit as st
 from google.oauth2 import service_account
 
 def get_credentials():
-    # 1. Trasformiamo i secrets in un dizionario standard
-    credentials_dict = dict(st.secrets["gcp_service_account"])
+    # 1. Recuperiamo la stringa unica dai secrets
+    b64_data = st.secrets["gsc_ga4_credentials_b64"]
     
-    if "private_key" in credentials_dict:
-        pk = credentials_dict["private_key"]
-        
-        # 2. Convertiamo i finti '\n' di testo in veri 'a capo'
-        pk = pk.replace("\\n", "\n")
-        
-        # 3. IL COLPACCIO: Dividiamo la chiave riga per riga, 
-        # eliminiamo gli spazi iniziali/finali di ogni riga (.strip()) 
-        # e scartiamo eventuali righe vuote rimaste per sbaglio
-        clean_lines = [line.strip() for line in pk.split("\n") if line.strip()]
-        
-        # 4. Ricomponiamo la chiave unendo le righe pulite con un vero 'a capo'
-        credentials_dict["private_key"] = "\n".join(clean_lines)
-        
-    # 5. Passiamo il dizionario emendato a Google
-    return service_account.Credentials.from_service_account_info(credentials_dict)
+    # 2. La decodifichiamo facendola tornare il JSON originale in formato byte
+    json_bytes = base64.b64decode(b64_data)
+    
+    # 3. Trasformiamo i byte in un dizionario Python
+    credentials_dict = json.loads(json_bytes)
+    
+    # 4. Passiamo il dizionario intatto a Google
+    return service_account.Credentials.from_service_account_info(
+        credentials_dict,
+        scopes=[
+            'https://www.googleapis.com/auth/webmasters.readonly',
+            'https://www.googleapis.com/auth/analytics.readonly'
+        ]
+    )
 
 def fetch_gsc_data(site_url, start_date, end_date):
     """Estrae i dati da Google Search Console (Query e Pagine)."""
