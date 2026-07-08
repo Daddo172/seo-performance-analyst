@@ -8,13 +8,8 @@ from google.analytics.data_v1beta.types import DateRange, Dimension, Metric, Run
 
 def get_credentials():
     """Carica le credenziali del Service Account."""
-    # Sostituisci o integra con la gestione tramite st.secrets se fai il deploy su Streamlit Cloud
-    return service_account.Credentials.from_service_account_file(
+    return service_account.Credentials.from_service_account_info(
         st.secrets["gcp_service_account"], # o letto da .env
-        scopes=[
-            'https://www.googleapis.com/auth/webmasters.readonly', # GSC
-            'https://www.googleapis.com/auth/analytics.readonly'   # GA4
-        ]
     )
 
 def fetch_gsc_data(site_url, start_date, end_date):
