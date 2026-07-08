@@ -1,86 +1,114 @@
 import pandas as pd
-import requests
-import os
-from bs4 import BeautifulSoup
-import google.generativeai as genai
 import streamlit as st
+from urllib.parse import urlparse
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from google.analytics.data_v1beta import BetaAnalyticsDataClient
+from google.analytics.data_v1beta.types import DateRange, Dimension, Metric, RunReportRequest
+import json, base64
+import streamlit as st
+from google.oauth2 import service_account
 
-def find_quick_wins(df, min_impressions=500, max_ctr=0.03):
-    """
-    Isola le pagine con alto potenziale (buone impression) ma basso CTR.
-    Filtra le keyword posizionate nelle prime 15 posizioni.
-    """
-    if df.empty:
-        return pd.DataFrame()
+def get_credentials():
+    # 1. Recuperiamo la stringa unica dai secrets
+    b64_data = st.secrets["gsc_ga4_credentials_b64"]
     
-    # Filtriamo: posizioni rilevanti, buone impression, ma CTR basso
-    quick_wins = df[
-        (df['position'] <= 15) & 
-        (df['impressions'] >= min_impressions) & 
-        (df['ctr'] < max_ctr)
-    ].copy()
+    # 2. La decodifichiamo facendola tornare il JSON originale in formato byte
+    json_bytes = base64.b64decode(b64_data)
     
-    # Ordiniamo per opportunità (chi ha più impression ma pochi clic viene prima)
-    quick_wins = quick_wins.sort_values(by='impressions', ascending=False)
-    return quick_wins
+    # 3. Trasformiamo i byte in un dizionario Python
+    credentials_dict = json.loads(json_bytes)
+    
+    # 4. Passiamo il dizionario intatto a Google
+    return service_account.Credentials.from_service_account_info(
+        credentials_dict,
+        scopes=[
+            'https://www.googleapis.com/auth/webmasters.readonly',
+            'https://www.googleapis.com/auth/analytics.readonly'
+        ]
+    )
 
-def scrape_current_tags(url):
-    """
-    Effettua il web scraping della pagina per estrarre il Title e la Meta Description attuali.
-    """
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+def fetch_gsc_data(site_url, start_date, end_date):
+    """Estrae i dati da Google Search Console (Query e Pagine)."""
+    creds = get_credentials()
+    service = build('webmasters', 'v3', credentials=creds)
+    
+    request_body = {
+        'startDate': start_date, # Formato YYYY-MM-DD
+        'endDate': end_date,
+        'dimensions': ['page', 'query'],
+        'rowLimit': 25000
     }
-    try:
-        response = requests.get(url, headers=headers, timeout=5)
-        if response.status_code != 200:
-            return "Non accessibile", "Non accessibile"
-            
-        soup = BeautifulSoup(response.text, 'html.parser')
+    
+    # Esecuzione della chiamata API
+    response = service.searchanalytics().query(siteUrl=site_url, body=request_body).execute()
+    
+    if 'rows' not in response:
+        return pd.DataFrame()
         
-        # Estrazione del Titolo
-        title = soup.find('title').text.strip() if soup.find('title') else "Nessun Titolo Trovato"
+    # Parsing della risposta
+    data = []
+    for row in response['rows']:
+        data.append({
+            'page': row['keys'][0],
+            'keyword': row['keys'][1],
+            'clicks': row['clicks'],
+            'impressions': row['impressions'],
+            'ctr': row['ctr'],
+            'position': row['position']
+        })
         
-        # Estrazione della Meta Description
-        meta_desc = "Nessuna Meta Description Trovata"
-        meta_tag = soup.find('meta', attrs={'name': 'description'}) or soup.find('meta', attrs={'property': 'og:description'})
-        if meta_tag and meta_tag.get('content'):
-            meta_desc = meta_tag['content'].strip()
-            
-        return title, meta_desc
-    except Exception as e:
-        return f"Errore: {str(e)}", "Errore"
+    df_gsc = pd.DataFrame(data)
+    
+    # NORMALIZZAZIONE: Estraiamo solo il path dall'URL di GSC per fare il join con GA4
+    df_gsc['page_path'] = df_gsc['page'].apply(lambda x: urlparse(x).path)
+    # Se il path è vuoto (home page), lo impostiamo come "/"
+    df_gsc['page_path'] = df_gsc['page_path'].apply(lambda x: "/" if x == "" else x)
+    
+    return df_gsc
 
-def generate_seo_suggestions(keyword, current_title, current_desc):
-    """
-    Interroga l'API di Gemini per generare proposte di ottimizzazione del CTR.
-    """
-    # Recupera la chiave API da Streamlit Secrets o variabili d'ambiente
-    api_key = st.secrets.get("GOOGLE_API_KEY")
-    if not api_key:
-        return ["Configura la tua GOOGLE_API_KEY per ricevere suggerimenti."]
+def fetch_ga4_data(property_id, start_date, end_date):
+    """Estrae i dati da Google Analytics 4 (Sessioni e Conversioni per Pagina)."""
+    creds = get_credentials()
+    client = BetaAnalyticsDataClient(credentials=creds)
+    
+    # Costruzione della richiesta GA4
+    request = RunReportRequest(
+        property=f"properties/{property_id}",
+        dimensions=[Dimension(name="pagePath")],
+        metrics=[
+            Metric(name="sessions"),
+            Metric(name="conversions"),
+            Metric(name="activeUsers")
+        ],
+        date_ranges=[DateRange(start_date=start_date, end_date=end_date)],
+    )
+    
+    response = client.run_report(request)
+    
+    data = []
+    for row in response.rows:
+        data.append({
+            'page_path': row.dimension_values[0].value,
+            'sessions': int(row.metric_values[0].value),
+            'conversions': float(row.metric_values[1].value),
+            'active_users': int(row.metric_values[2].value)
+        })
         
-    genai.configure(api_key=api_key)
+    return pd.DataFrame(data)
+
+def get_merged_seo_data(site_url, property_id, start_date, end_date):
+    """Unisce i dati di GSC e GA4 usando il page_path come chiave di Join."""
+    df_gsc = fetch_gsc_data(site_url, start_date, end_date)
+    df_ga4 = fetch_ga4_data(property_id, start_date, end_date)
     
-    # Usiamo il modello stabile e veloce per elaborazione testi
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    if df_gsc.empty or df_ga4.empty:
+        return df_gsc if df_ga4.empty else df_ga4
+        
+    # Eseguiamo un Left Join: teniamo tutte le keyword/pagine di GSC e attacchiamo i dati di GA4
+    df_merged = pd.merge(df_gsc, df_ga4, on='page_path', how='left')
     
-    prompt = f"""
-    Agisci come un esperto SEO Copywriter Senior specializzato nell'aumentare il CTR (Click-Through Rate) nei risultati di ricerca di Google.
-    Un sito web ha una pagina che si posiziona per la keyword: '{keyword}'.
+    # Riempiamo i valori NaN con 0 per le pagine che non hanno registrato sessioni/conversioni
+    df_merged[['sessions', 'conversions', 'active_users']] = df_merged[['sessions', 'conversions', 'active_users']].fillna(0)
     
-    I tag HTML attuali di questa pagina sono:
-    - TITOLO ATTUALE: {current_title}
-    - META DESCRIPTION ATTUALE: {current_desc}
-    
-    Il tuo compito è riscrivere questi tag per renderli irresistibili da cliccare, mantenendo la keyword principale all'inizio o comunque dentro i testi, rispettando i limiti di lunghezza di Google (Title: max 60 caratteri, Description: max 150 caratteri).
-    
-    Fornisci esattamente 3 varianti diverse (es. una basata sulla curiosità, una sui benefici, una numerica/emozionale).
-    Rispondi esclusivamente in italiano formattando l'output in modo pulito ed elegante.
-    """
-    
-    try:
-        response = model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        return f"Errore nella generazione AI: {str(e)}"
+    return df_merged
