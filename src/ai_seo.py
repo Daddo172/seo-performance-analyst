@@ -88,7 +88,7 @@ def generate_seo_suggestions(keyword, current_title, current_desc, posizione, ct
         return f"❌ Errore durante l'interrogazione dell'API di Gemini: {str(e)}"
 
 def get_search_intent(query):
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-2.0-flash')
     
     prompt = f"""
     Sei un esperto SEO. Classifica la keyword fornita in UNA di queste categorie: "Informativa", "Transazionale", "Navigazionale".

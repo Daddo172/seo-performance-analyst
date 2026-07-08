@@ -4,7 +4,7 @@ plotly
 sqlalchemy
 requests
 python-dotenv
-google-generativeai
+google-generativeai>=0.8.0
 python-dotenv
 requests
 beautifulsoup4
