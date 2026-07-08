@@ -6,16 +6,28 @@ from googleapiclient.discovery import build
 from google.analytics.data_v1beta import BetaAnalyticsDataClient
 from google.analytics.data_v1beta.types import DateRange, Dimension, Metric, RunReportRequest
 
+import streamlit as st
+from google.oauth2 import service_account
+
 def get_credentials():
-    # 1. Trasformiamo i secrets di Streamlit in un dizionario Python standard
-    # (st.secrets restituisce un oggetto speciale che non sempre si comporta come un dict)
+    # 1. Trasformiamo i secrets in un dizionario standard
     credentials_dict = dict(st.secrets["gcp_service_account"])
     
-    # 2. IL TRUCCO MAGICO: Sostituiamo i '\n' di testo con veri e propri "a capo" di Python
     if "private_key" in credentials_dict:
-        credentials_dict["private_key"] = credentials_dict["private_key"].replace("\\n", "\n")
+        pk = credentials_dict["private_key"]
         
-    # 3. Passiamo il dizionario ripulito ed emendato a Google
+        # 2. Convertiamo i finti '\n' di testo in veri 'a capo'
+        pk = pk.replace("\\n", "\n")
+        
+        # 3. IL COLPACCIO: Dividiamo la chiave riga per riga, 
+        # eliminiamo gli spazi iniziali/finali di ogni riga (.strip()) 
+        # e scartiamo eventuali righe vuote rimaste per sbaglio
+        clean_lines = [line.strip() for line in pk.split("\n") if line.strip()]
+        
+        # 4. Ricomponiamo la chiave unendo le righe pulite con un vero 'a capo'
+        credentials_dict["private_key"] = "\n".join(clean_lines)
+        
+    # 5. Passiamo il dizionario emendato a Google
     return service_account.Credentials.from_service_account_info(credentials_dict)
 
 def fetch_gsc_data(site_url, start_date, end_date):
