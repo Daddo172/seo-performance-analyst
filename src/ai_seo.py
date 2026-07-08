@@ -43,7 +43,7 @@ def generate_seo_suggestions(keyword, current_title, current_desc, posizione, ct
         
     # Inizializzazione del client ufficiale Google GenAI
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-2.0-flash')
+    model = genai.GenerativeModel('gemini-1.5-flash-latest')
     
     # --- 🧠 COSTRUZIONE DEL PROMPT AVANZATO ---
     prompt = f"""
@@ -88,7 +88,7 @@ def generate_seo_suggestions(keyword, current_title, current_desc, posizione, ct
         return f"❌ Errore durante l'interrogazione dell'API di Gemini: {str(e)}"
 
 def get_search_intent(query):
-    model = genai.GenerativeModel('gemini-2.0-flash')
+    model = genai.GenerativeModel('gemini-1.5-flash-latest')
     
     prompt = f"""
     Sei un esperto SEO. Classifica la keyword fornita in UNA di queste categorie: "Informativa", "Transazionale", "Navigazionale".
