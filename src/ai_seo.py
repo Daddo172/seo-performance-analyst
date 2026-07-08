@@ -14,7 +14,6 @@ except:
     load_dotenv()
     api_key = os.getenv("GOOGLE_API_KEY")
     
-genai.configure(api_key=api_key)
 def generate_seo_suggestions(keyword, current_title, current_desc, posizione, ctr):
     """
     Genera proposte SEO effettuando una chiamata HTTP diretta alle API di Gemini.
