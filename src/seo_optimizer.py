@@ -56,7 +56,7 @@ def generate_seo_suggestions(keyword, current_title, current_desc):
     Interroga l'API di Gemini per generare proposte di ottimizzazione del CTR.
     """
     # Recupera la chiave API da Streamlit Secrets o variabili d'ambiente
-    api_key = st.secrets.get("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+    api_key = st.secrets.get("GOOGLE_API_KEY")
     if not api_key:
         return ["Configura la tua GOOGLE_API_KEY per ricevere suggerimenti."]
         
