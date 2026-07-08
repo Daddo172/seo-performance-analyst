@@ -1,5 +1,7 @@
 import streamlit as st
+from datetime import datetime, timedelta
 import pandas as pd
+from src.google_api_connector.py import get_credentials,fetch_gsc_data,fetch_ga4_data,get_merged_seo_data
 import plotly.express as px
 from src.ai_seo import get_search_intent,generate_seo_suggestions
 from src.processor import get_competitor_gap ,analyze_content_decay,calculate_keyword_difficulty,perform_technical_audit, analyze_crawl_efficiency ,perform_technical_audit,add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date , load_devices , load_countries
@@ -13,12 +15,49 @@ st.title("🚀 SEO Performance Analyzer")
 st.markdown("Trasforma i dati di Search Console in strategie di crescita.")
 
 # 1. Box di caricamento dinamico
-st.sidebar.header("Carica i Dati")
-uploaded_query = st.sidebar.file_uploader("Carica Query.csv", type=['csv'])
-uploaded_pages = st.sidebar.file_uploader("Carica Pagine.csv", type=['csv'])
-uploaded_grafico = st.sidebar.file_uploader("Carica Grafico.csv", type=['csv'])
-uploaded_paesi = st.sidebar.file_uploader("Carica paesi.csv", type=['csv'])
-uploaded_dispositivi = st.sidebar.file_uploader("Carica dispositivi.csv", type=['csv'])
+st.sidebar.title("Configurazione Sorgente Dati")
+source_type = st.sidebar.radio("Scegli come inserire i dati:", ["Connessione API (Raccomandato)", "Carica file CSV"])
+
+if source_type == "Connessione API (Raccomandato)":
+    st.subheader("Dati Estratti in Tempo Reale via API")
+    
+    # Input di configurazione (in produzione leggerai questi dati da un file di configurazione dell'utente)
+    site_url = st.sidebar.text_input("GSC Site URL", value="https://www.esempio.com/")
+    property_id = st.sidebar.text_input("GA4 Property ID", value="123456789")
+    
+    # Selettore di date spazioso ed elegante
+    col1, col2 = st.columns(2)
+    with col1:
+        start_date = st.date_input("Data Inizio", datetime.now() - timedelta(days=30))
+    with col2:
+        end_date = st.date_input("Data Fine", datetime.now())
+        
+    if st.button("Calcola Performance e Genera Soluzioni"):
+        with st.spinner("Estrazione e incrocio dati in corso..."):
+            # Chiamata alla funzione di Data Science
+            df_final = get_merged_seo_data(
+                site_url, 
+                property_id, 
+                start_date.strftime("%Y-%m-%d"), 
+                end_date.strftime("%Y-%m-%d")
+            )
+            
+            if not df_final.empty:
+                st.success("Dati caricati e uniti con successo!")
+                st.dataframe(df_final.head(10))
+                
+                # QUI SALVIAMO IL DATAFRAME IN SESSION_STATE PER I MODULI SUCCESSIVI
+                st.session_state['seo_data'] = df_final
+            else:
+                st.error("Nessun dato trovato per le credenziali o le date inserite.")
+
+else:
+    st.sidebar.header("Carica i Dati")
+    uploaded_query = st.sidebar.file_uploader("Carica Query.csv", type=['csv'])
+    uploaded_pages = st.sidebar.file_uploader("Carica Pagine.csv", type=['csv'])
+    uploaded_grafico = st.sidebar.file_uploader("Carica Grafico.csv", type=['csv'])
+    uploaded_paesi = st.sidebar.file_uploader("Carica paesi.csv", type=['csv'])
+    uploaded_dispositivi = st.sidebar.file_uploader("Carica dispositivi.csv", type=['csv'])
 
 
 # 2. Logica: se l'utente carica i file, usa quelli. Se no, usa quelli di default (se esistono)

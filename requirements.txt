@@ -10,3 +10,6 @@ requests
 beautifulsoup4
 prophet
 scikit-learn
+google-api-python-client
+google-auth
+google-analytics-data
