@@ -93,13 +93,15 @@ if 'seo_data' in st.session_state:
             selected_opt = st.selectbox("Seleziona quale opportunità vuoi analizzare:", opportunity_list)
             
             if selected_opt:
-                # Estraiamo la keyword e l'URL selezionati
+                # Estraiamo la keyword e l'URL selezionati dalla stringa del selectbox
                 selected_keyword = selected_opt.split(" -> ")[0]
                 selected_url = selected_opt.split(" -> ")[1]
                 
+                # 💡 IL TRUCCO: Recuperiamo l'intera riga del DataFrame associata a questa specifica pagina
+                riga_selezionata = df_wins[df_wins['page'] == selected_url].iloc[0]
+                
                 if st.button("Analizza Pagina e Genera Nuovi Tag con AI"):
                     with st.spinner("Scansione della pagina web in corso..."):
-                        # 1. Facciamo lo scraping in tempo reale dei tag attuali
                         current_title, current_desc = scrape_current_tags(selected_url)
                         
                         col_left, col_right = st.columns(2)
@@ -109,8 +111,14 @@ if 'seo_data' in st.session_state:
                             st.info(f"**Meta Description Rilevata:**\n{current_desc}")
                             
                     with st.spinner("Gemini sta elaborando le varianti di copywriting ad alto CTR..."):
-                        # 2. Chiamiamo l'IA passandogli i dati vecchi per generare i nuovi
-                        ai_suggestions = generate_seo_suggestions(selected_keyword, current_title, current_desc)
+                        # ✨ CHIAMATA AGGIORNATA: Ora passiamo tutti e 5 i parametri richiesti dalla funzione
+                        ai_suggestions = generate_seo_suggestions(
+                            keyword=selected_keyword,
+                            current_title=current_title,
+                            current_desc=current_desc,
+                            posizione=riga_selezionata['position'],  # o 'posizione' se hai rinominato la colonna
+                            ctr=riga_selezionata['ctr']
+                        )
                         
                         st.success("✨ Ecco le proposte di ottimizzazione generate dall'Intelligenza Artificiale:")
                         st.markdown(ai_suggestions)
