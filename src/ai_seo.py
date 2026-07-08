@@ -1,5 +1,7 @@
 import google.generativeai as genai
 import os
+from google import genai
+from google.genai import types
 import streamlit as st # Importa streamlit per leggere i segreti
 
 # Configura l'API (usa una variabile d'ambiente per sicurezza!)
@@ -20,73 +22,70 @@ def generate_seo_suggestions(keyword, current_title, current_desc, posizione, ct
     
     # --- 🛠️ BLOCCO DI SICUREZZA PER IL CTR ---
     try:
-        # Se il CTR è una stringa (es. "2.5%"), puliamo i caratteri di testo
         if isinstance(ctr, str):
             ctr = ctr.replace('%', '').strip()
-        
         ctr_num = float(ctr)
-        
-        # Se Google Search Console restituisce già i dati su base 100 (es. 2.5 invece di 0.025)
-        # normalizziamo il valore dividendolo per 100 prima di applicare la formattazione
         if ctr_num > 1.0:
             ctr_num = ctr_num / 100
-            
         ctr_visualizzato = f"{ctr_num:.2%}"
     except (ValueError, TypeError):
-        # Fallback difensivo: se non è convertibile in numero, lo trattiamo come testo puro
         ctr_visualizzato = str(ctr)
 
-    # --- 🔑 CONTROLLO E RECUPERO API KEY ---
+    # --- 🔑 RECUPERO API KEY ---
     api_key = st.secrets.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
     if not api_key:
-        return "⚠️ Errore: Configura la tua 'GEMINI_API_KEY' nei Secrets di Streamlit o nel file .env per ricevere i suggerimenti dell'IA."
+        return "⚠️ Errore: Configura la tua 'GEMINI_API_KEY' nei Secrets di Streamlit."
         
-    # Inizializzazione del client ufficiale Google GenAI
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-2.0-flash-latest')
-    
-    # --- 🧠 COSTRUZIONE DEL PROMPT AVANZATO ---
-    prompt = f"""
-    Agisci come un esperto SEO Copywriter Senior specializzato nell'aumentare il CTR (Click-Through Rate) nei risultati di ricerca di Google.
-    Un sito web di una PMI ha una pagina con le seguenti performance attuali:
-    - Keyword principale per cui si posiziona: '{keyword}'
-    - Posizione media su Google: {posizione}
-    - CTR attuale: {ctr_visualizzato}
-    
-    I tag HTML attualmente caricati sulla pagina sono:
-    - TITOLO ATTUALE: {current_title}
-    - META DESCRIPTION ATTUALE: {current_desc}
-    
-    Il tuo compito è riscrivere il Tag Title e la Meta Description per renderli irresistibili da cliccare rispetto alla concorrenza, stimolando la curiosità, l'urgenza o l'esclusività, ma mantenendo obbligatoriamente la keyword principale (essenziale per non perdere il posizionamento acquisito).
-    
-    Rispetta rigidamente i limiti di pixel/caratteri di Google:
-    - Tag Title: Massimo 60 caratteri.
-    - Meta Description: Massimo 150 caratteri.
-    
-    Fornisci esattamente 3 varianti diverse (es. una basata sui benefici diretti, una numerica/lista, una emozionale o a domanda), formattate chiaramente in questo modo:
-    
-    ### 🎯 Variante 1: [Tipo di approccio]
-    **Title:** [Nuovo Titolo Ottimizzato]
-    **Meta Description:** [Nuova Meta Description Ottimizzata]
-    
-    ### 🎯 Variante 2: [Tipo di approccio]
-    **Title:** [Nuovo Titolo Ottimizzato]
-    **Meta Description:** [Nuova Meta Description Ottimizzata]
-    
-    ### 🎯 Variante 3: [Tipo di approccio]
-    **Title:** [Nuovo Titolo Ottimizzato]
-    **Meta Description:** [Nuova Meta Description Ottimizzata]
-    
-    Rispondi esclusivamente in italiano. Vai dritto al punto senza preamboli, introduzioni o saluti.
-    """
-    
-    # --- 🚀 ESECUZIONE CHIAMATA API ---
+    # --- 🚀 INIZIALIZZAZIONE CON IL NUOVO CLIENT ---
     try:
-        response = model.generate_content(prompt)
+        # Il nuovo client accetta nativamente le chiavi AQ
+        client = genai.Client(api_key=api_key)
+        model = genai.GenerativeModel('gemini-2.0-flash-latest')
+        
+        # --- 🧠 COSTRUZIONE DEL PROMPT AVANZATO ---
+        prompt = f"""
+        Agisci come un esperto SEO Copywriter Senior specializzato nell'aumentare il CTR (Click-Through Rate) nei risultati di ricerca di Google.
+        Un sito web di una PMI ha una pagina con le seguenti performance attuali:
+        - Keyword principale per cui si posiziona: '{keyword}'
+        - Posizione media su Google: {posizione}
+        - CTR attuale: {ctr_visualizzato}
+        
+        I tag HTML attualmente caricati sulla pagina sono:
+        - TITOLO ATTUALE: {current_title}
+        - META DESCRIPTION ATTUALE: {current_desc}
+        
+        Il tuo compito è riscrivere il Tag Title e la Meta Description per renderli irresistibili da cliccare rispetto alla concorrenza, stimolando la curiosità, l'urgenza o l'esclusività, ma mantenendo obbligatoriamente la keyword principale (essenziale per non perdere il posizionamento acquisito).
+        
+        Rispetta rigidamente i limiti di pixel/caratteri di Google:
+        - Tag Title: Massimo 60 caratteri.
+        - Meta Description: Massimo 150 caratteri.
+        
+        Fornisci esattamente 3 varianti diverse (es. una basata sui benefici diretti, una numerica/lista, una emozionale o a domanda), formattate chiaramente in questo modo:
+        
+        ### 🎯 Variante 1: [Tipo di approccio]
+        **Title:** [Nuovo Titolo Ottimizzato]
+        **Meta Description:** [Nuova Meta Description Ottimizzata]
+        
+        ### 🎯 Variante 2: [Tipo di approccio]
+        **Title:** [Nuovo Titolo Ottimizzato]
+        **Meta Description:** [Nuova Meta Description Ottimizzata]
+        
+        ### 🎯 Variante 3: [Tipo di approccio]
+        **Title:** [Nuovo Titolo Ottimizzato]
+        **Meta Description:** [Nuova Meta Description Ottimizzata]
+        
+        Rispondi esclusivamente in italiano. Vai dritto al punto senza preamboli, introduzioni o saluti.
+        """
+        
+        # --- 🚀 ESECUZIONE CHIAMATA API ---
+        # Chiamata con il nuovo SDK e modello consigliato
+        response = client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt,
+        )
         return response.text
     except Exception as e:
-        return f"❌ Errore durante l'interrogazione dell'API di Gemini: {str(e)}"
-
+        return f"❌ Errore con il nuovo client Gemini: {str(e)}"
 def get_search_intent(query):
     model = genai.GenerativeModel('gemini-2-0-flash-latest')
     
