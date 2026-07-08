@@ -1,6 +1,7 @@
 import streamlit as st
 from datetime import datetime, timedelta
 import pandas as pd
+from src.seo_optimizer import find_quick_wins,scrape_current_tags,generate_seo_suggestions
 from src.google_api_connector import get_credentials,fetch_gsc_data,fetch_ga4_data,get_merged_seo_data
 import plotly.express as px
 from src.ai_seo import get_search_intent,generate_seo_suggestions
@@ -50,6 +51,69 @@ if source_type == "Connessione API (Raccomandato)":
                 st.session_state['seo_data'] = df_final
             else:
                 st.error("Nessun dato trovato per le credenziali o le date inserite.")
+    # Sotto il caricamento dei dati in app.py...
+if 'seo_data' in st.session_state:
+    df_final = st.session_state['seo_data']
+    
+    # Creiamo due tab nella dashboard per organizzare il lavoro
+    tab1, tab2 = st.tabs(["📊 Panoramica Dati", "🚀 Modulo: Vincite Facili (Ottimizzazione CTR)"])
+    
+    with tab1:
+        st.subheader("I tuoi dati SEO uniti")
+        st.dataframe(df_final)
+        
+    with tab2:
+        st.subheader("Pagine ad alto potenziale ma basso Click-Through Rate")
+        st.write("Queste pagine compaiono spesso su Google (alte Impression) ma gli utenti non le cliccano. Ottimizza il titolo e la descrizione per attirare traffico!")
+        
+        # Eseguiamo l'algoritmo di Data Science per trovare i Quick Wins
+        df_wins = find_quick_wins(df_final)
+        
+        if df_wins.empty:
+            st.info("Congratulazioni! Non ci sono pagine con un CTR criticamente basso sotto la posizione 15.")
+        else:
+            # Mostriamo la tabella delle opportunità semplificata per la PMI
+            st.dataframe(
+                df_wins[['page', 'keyword', 'impressions', 'clicks', 'ctr', 'position']].head(10),
+                column_config={
+                    "page": "URL Pagina",
+                    "keyword": "Keyword Principale",
+                    "impressions": "Visualizzazioni",
+                    "clicks": "Clic Ricevuti",
+                    "ctr": st.column_config.NumberColumn("CTR attuale", format="%.2f%%"),
+                    "position": "Posizione Media"
+                }
+            )
+            
+            st.markdown("---")
+            st.subheader("🧠 Ottimizzatore Intelligente Singola Pagina")
+            
+            # Creiamo un selettore per permettere alla PMI di scegliere quale keyword/pagina ottimizzare
+            opportunity_list = [f"{row['keyword']} -> {row['page']}" for _, row in df_wins.head(10).iterrows()]
+            selected_opt = st.selectbox("Seleziona quale opportunità vuoi analizzare:", opportunity_list)
+            
+            if selected_opt:
+                # Estraiamo la keyword e l'URL selezionati
+                selected_keyword = selected_opt.split(" -> ")[0]
+                selected_url = selected_opt.split(" -> ")[1]
+                
+                if st.button("Analizza Pagina e Genera Nuovi Tag con AI"):
+                    with st.spinner("Scansione della pagina web in corso..."):
+                        # 1. Facciamo lo scraping in tempo reale dei tag attuali
+                        current_title, current_desc = scrape_current_tags(selected_url)
+                        
+                        col_left, col_right = st.columns(2)
+                        with col_left:
+                            st.info(f"**Titolo Rilevato sul Sito:**\n{current_title}")
+                        with col_right:
+                            st.info(f"**Meta Description Rilevata:**\n{current_desc}")
+                            
+                    with st.spinner("Gemini sta elaborando le varianti di copywriting ad alto CTR..."):
+                        # 2. Chiamiamo l'IA passandogli i dati vecchi per generare i nuovi
+                        ai_suggestions = generate_seo_suggestions(selected_keyword, current_title, current_desc)
+                        
+                        st.success("✨ Ecco le proposte di ottimizzazione generate dall'Intelligenza Artificiale:")
+                        st.markdown(ai_suggestions)
 
 else:
     st.sidebar.header("Carica i Dati")
