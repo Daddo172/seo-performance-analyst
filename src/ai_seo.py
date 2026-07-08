@@ -1,5 +1,6 @@
 import google.generativeai as genai
 import os
+import requests
 from google import genai
 from google.genai import types
 import streamlit as st # Importa streamlit per leggere i segreti
@@ -16,8 +17,8 @@ except:
 genai.configure(api_key=api_key)
 def generate_seo_suggestions(keyword, current_title, current_desc, posizione, ctr):
     """
-    Interroga l'API di Gemini per generare proposte di ottimizzazione del CTR.
-    Gestisce in totale sicurezza i dati numerici ed evita i crash di formattazione stringa.
+    Genera proposte SEO effettuando una chiamata HTTP diretta alle API di Gemini.
+    Perfettamente compatibile con chiavi API che iniziano per AQ e AIzaSy.
     """
     
     # --- 🛠️ BLOCCO DI SICUREZZA PER IL CTR ---
@@ -36,75 +37,54 @@ def generate_seo_suggestions(keyword, current_title, current_desc, posizione, ct
     if not api_key:
         return "⚠️ Errore: Configura la tua 'GEMINI_API_KEY' nei Secrets di Streamlit."
         
-    # --- 🚀 INIZIALIZZAZIONE CON IL NUOVO CLIENT ---
-    try:
-        # Il nuovo client accetta nativamente le chiavi AQ
-        client = genai.Client(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.0-flash-latest')
-        
-        # --- 🧠 COSTRUZIONE DEL PROMPT AVANZATO ---
-        prompt = f"""
-        Agisci come un esperto SEO Copywriter Senior specializzato nell'aumentare il CTR (Click-Through Rate) nei risultati di ricerca di Google.
-        Un sito web di una PMI ha una pagina con le seguenti performance attuali:
-        - Keyword principale per cui si posiziona: '{keyword}'
-        - Posizione media su Google: {posizione}
-        - CTR attuale: {ctr_visualizzato}
-        
-        I tag HTML attualmente caricati sulla pagina sono:
-        - TITOLO ATTUALE: {current_title}
-        - META DESCRIPTION ATTUALE: {current_desc}
-        
-        Il tuo compito è riscrivere il Tag Title e la Meta Description per renderli irresistibili da cliccare rispetto alla concorrenza, stimolando la curiosità, l'urgenza o l'esclusività, ma mantenendo obbligatoriamente la keyword principale (essenziale per non perdere il posizionamento acquisito).
-        
-        Rispetta rigidamente i limiti di pixel/caratteri di Google:
-        - Tag Title: Massimo 60 caratteri.
-        - Meta Description: Massimo 150 caratteri.
-        
-        Fornisci esattamente 3 varianti diverse (es. una basata sui benefici diretti, una numerica/lista, una emozionale o a domanda), formattate chiaramente in questo modo:
-        
-        ### 🎯 Variante 1: [Tipo di approccio]
-        **Title:** [Nuovo Titolo Ottimizzato]
-        **Meta Description:** [Nuova Meta Description Ottimizzata]
-        
-        ### 🎯 Variante 2: [Tipo di approccio]
-        **Title:** [Nuovo Titolo Ottimizzato]
-        **Meta Description:** [Nuova Meta Description Ottimizzata]
-        
-        ### 🎯 Variante 3: [Tipo di approccio]
-        **Title:** [Nuovo Titolo Ottimizzato]
-        **Meta Description:** [Nuova Meta Description Ottimizzata]
-        
-        Rispondi esclusivamente in italiano. Vai dritto al punto senza preamboli, introduzioni o saluti.
-        """
-        
-        # --- 🚀 ESECUZIONE CHIAMATA API ---
-        # Chiamata con il nuovo SDK e modello consigliato
-        response = client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt,
-        )
-        return response.text
-    except Exception as e:
-        return f"❌ Errore con il nuovo client Gemini: {str(e)}"
-def get_search_intent(query):
-    model = genai.GenerativeModel('gemini-2-0-flash-latest')
-    
+    # --- 🧠 COSTRUZIONE DEL PROMPT ---
     prompt = f"""
-    Sei un esperto SEO. Classifica la keyword fornita in UNA di queste categorie: "Informativa", "Transazionale", "Navigazionale".
+    Agisci come un esperto SEO Copywriter Senior specializzato nell'aumentare il CTR (Click-Through Rate) nei risultati di ricerca di Google.
+    Un sito web di una PMI ha una pagina con le seguenti performance attuali:
+    - Keyword principale: '{keyword}'
+    - Posizione media: {posizione}
+    - CTR attuale: {ctr_visualizzato}
     
-    Esempi:
-    - "ristorante roma" -> Transazionale
-    - "come cucinare la pasta" -> Informativa
-    - "sito ufficiale volpe pasini" -> Navigazionale
+    I tag HTML attuali sono:
+    - TITOLO ATTUALE: {current_title}
+    - META DESCRIPTION ATTUALE: {current_desc}
     
-    Keyword da classificare: "{query}"
-    Rispondi SOLTANTO con la categoria, nessuna spiegazione.
+    Riscrivi il Tag Title (max 60 caratteri) e la Meta Description (max 150 caratteri) per aumentare drasticamente i clic, mantenendo la keyword principale.
+    Fornisci esattamente 3 varianti in italiano, formattate chiaramente con titoli (Variante 1, 2, 3). Vai dritto al punto.
     """
+
+    # --- 🌐 CHIAMATA REST DIRETTA ---
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "contents": [
+            {
+                "parts": [{"text": prompt}]
+            }
+        ]
+    }
     
     try:
-        response = model.generate_content(prompt)
-        result = response.text.strip()
-        # Pulizia: se l'IA aggiunge punti o spazi
-        return result.replace('.', '').strip()
-    except:
-        return "Errore IA"
+        response = requests.post(url, headers=headers, json=payload, timeout=15)
+        response_json = response.json()
+        
+        if response.status_code != 200:
+            error_details = response_json.get("error", {}).get("message", "Errore sconosciuto")
+            return f"❌ Errore API Gemini ({response.status_code}): {error_details}"
+            
+        return response_json['candidates'][0]['content']['parts'][0]['text']
+    except Exception as e:
+        return f"❌ Errore di connessione durante la richiesta a Gemini: {str(e)}"
+
+
+def get_search_intent(keyword):
+    """
+    Funzione di fallback per calcolare l'intento di ricerca della keyword,
+    evitando il NameError / ImportError all'avvio di app.py.
+    """
+    # Puoi espandere questa logica in futuro se serve alla dashboard,
+    # per ora restituisce un valore sicuro per non bloccare l'app.
+    kw_lower = str(keyword).lower()
+    if any(w in kw_lower for w in ["comprare", "prezzo", "costo", "bistrot", "ristorante", "shop"]):
+        return "Commerciale / Transazionale"
+    return "Informativo"
