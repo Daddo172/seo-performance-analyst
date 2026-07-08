@@ -1,16 +1,20 @@
-streamlit
-pandas
-plotly
-sqlalchemy
-requests
-python-dotenv
-google-generativeai>=0.8.0
-python-dotenv
-requests
-beautifulsoup4
-prophet
-scikit-learn
-google-api-python-client
-google-auth
-google-analytics-data
-google-genai
+"""
+Smoke test da riga di comando: verifica che la pipeline di pulizia dati
+funzioni correttamente su un file Query.csv esportato da Search Console.
+
+BUG FIX: importava `load_and_clean_gsc`, funzione mai esistita in src/processor.py
+(la funzione corretta e' `load_query`). Questo faceva fallire lo script ad ogni esecuzione.
+"""
+from src.processor import load_query
+
+file_path = 'data/Query.csv'
+
+try:
+    df = load_query(file_path)
+    print("Dati puliti correttamente!")
+    print(df.info())
+    print(df.head())
+except FileNotFoundError:
+    print(f"File non trovato: {file_path}. Esporta un file Query.csv da Search Console e mettilo in data/.")
+except Exception as e:
+    print(f"Errore durante l'elaborazione: {e}")
