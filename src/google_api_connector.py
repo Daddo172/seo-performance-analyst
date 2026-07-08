@@ -7,10 +7,16 @@ from google.analytics.data_v1beta import BetaAnalyticsDataClient
 from google.analytics.data_v1beta.types import DateRange, Dimension, Metric, RunReportRequest
 
 def get_credentials():
-    """Carica le credenziali del Service Account."""
-    return service_account.Credentials.from_service_account_info(
-        st.secrets["gcp_service_account"], # o letto da .env
-    )
+    # 1. Trasformiamo i secrets di Streamlit in un dizionario Python standard
+    # (st.secrets restituisce un oggetto speciale che non sempre si comporta come un dict)
+    credentials_dict = dict(st.secrets["gcp_service_account"])
+    
+    # 2. IL TRUCCO MAGICO: Sostituiamo i '\n' di testo con veri e propri "a capo" di Python
+    if "private_key" in credentials_dict:
+        credentials_dict["private_key"] = credentials_dict["private_key"].replace("\\n", "\n")
+        
+    # 3. Passiamo il dizionario ripulito ed emendato a Google
+    return service_account.Credentials.from_service_account_info(credentials_dict)
 
 def fetch_gsc_data(site_url, start_date, end_date):
     """Estrae i dati da Google Search Console (Query e Pagine)."""
