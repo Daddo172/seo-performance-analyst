@@ -1,4 +1,5 @@
 import pandas as pd
+import streamlit as st
 from urllib.parse import urlparse
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -9,7 +10,7 @@ def get_credentials():
     """Carica le credenziali del Service Account."""
     # Sostituisci o integra con la gestione tramite st.secrets se fai il deploy su Streamlit Cloud
     return service_account.Credentials.from_service_account_file(
-        filename="service_account_credentials.json", # o letto da .env
+        st.secrets["gcp_service_account"], # o letto da .env
         scopes=[
             'https://www.googleapis.com/auth/webmasters.readonly', # GSC
             'https://www.googleapis.com/auth/analytics.readonly'   # GA4
