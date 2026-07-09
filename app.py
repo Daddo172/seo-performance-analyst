@@ -191,7 +191,7 @@ if 'seo_data' in st.session_state:
     with tab5:
         st.header("AEO Audit")
         target_url = st.text_input("Inserisci URL da analizzare")
-        if st.button("Avvia Audit AEO"):
+        if st.button(" Audit AEO"):
             with st.spinner("Analisi in corso..."):
                 # 1. Robots
                 domain = "/".join(target_url.split('/')[:3])
