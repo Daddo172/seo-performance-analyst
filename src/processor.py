@@ -178,23 +178,6 @@ def calculate_keyword_difficulty(df):
     
     df['Keyword_Difficulty'] = (vol_factor + pos_factor + ctr_factor).clip(0, 100)
     return df
-
-def perform_technical_audit(df_pages):
-    """Diagnostica lo stato tecnico delle pagine"""
-    audit = []
-    for _, row in df_pages.iterrows():
-        issues = []
-        if row['CTR'] < 0.01: issues.append("CTR Basso")
-        if row['Posizione'] > 30: issues.append("Posizione Critica")
-        if row.get('Crawl_Depth', 0) > 3: issues.append("Troppo profonda")
-        
-        audit.append({
-            'Pagina': row['Pagina'],
-            'Problemi': ", ".join(issues) if issues else "OK",
-            'Stato': "🚨" if issues else "✅"
-        })
-    return pd.DataFrame(audit)
-
     
 def get_seo_opportunities(df):
     return df[(df['Posizione'] > 10) & (df['Posizione'] <= 20)].sort_values('Impressioni', ascending=False)

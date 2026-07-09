@@ -1,7 +1,7 @@
 import streamlit as st
 from datetime import datetime, timedelta
 import pandas as pd
-from src.seo_optimizer import find_quick_wins,scrape_current_tags,generate_seo_suggestions
+from src.seo_optimizer import find_quick_wins,scrape_current_tags
 from src.google_api_connector import get_credentials,fetch_gsc_data,fetch_ga4_data,get_merged_seo_data
 import plotly.express as px
 from src.ai_seo import get_search_intent,generate_seo_suggestions
@@ -254,7 +254,7 @@ else:
                     with st.spinner("L'IA sta analizzando..."):
                         # Qui richiami l'IA passando il prompt dell'utente
                         # Assicurati che generate_seo_suggestions prenda il prompt
-                        response = generate_seo_suggestions(prompt, 0, 0) # Posizione e CTR di default
+                        response = generate_seo_suggestions(prompt, 0, 0, 0, 0) # Posizione e CTR di default
                         st.markdown(response)
                 
                 # Aggiungi la risposta alla cronologia

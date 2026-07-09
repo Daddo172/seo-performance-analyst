@@ -27,7 +27,7 @@ def get_credentials():
             'https://www.googleapis.com/auth/analytics.readonly'
         ]
     )
-
+@st.cache_data(ttl=3600)
 def fetch_gsc_data(site_url, start_date, end_date):
     """Estrae i dati da Google Search Console (Query e Pagine)."""
     creds = get_credentials()
@@ -66,7 +66,7 @@ def fetch_gsc_data(site_url, start_date, end_date):
     df_gsc['page_path'] = df_gsc['page_path'].apply(lambda x: "/" if x == "" else x)
     
     return df_gsc
-
+@st.cache_data(ttl=3600)
 def fetch_ga4_data(property_id, start_date, end_date):
     """Estrae i dati da Google Analytics 4 (Sessioni e Conversioni per Pagina)."""
     creds = get_credentials()
