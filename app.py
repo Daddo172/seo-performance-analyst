@@ -16,7 +16,7 @@ from src.aeo import AEOAnalyzer,audit_robots_txt, analyze_page_aeo, calculate_ae
 
 # Configurazione Pagina
 st.set_page_config(page_title="SEO Strategy Dashboard", layout="wide")
-st.title("🚀 SEO Performance Analyzer")
+st.title("AI SEO & AEO Audit Dashboard")
 st.markdown("Trasforma i dati di Search Console in strategie di crescita.")
 
 # 1. Box di caricamento dinamico
