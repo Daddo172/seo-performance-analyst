@@ -10,6 +10,18 @@ from src.broken_links import check_broken_links
 from src.technical_audit import check_ssl
 from src.forecasting import train_and_forecast, perform_backtest
 
+from src.aeo import AEOAnalyzer
+
+# Proviamo ad analizzare una pagina di test (es. Google o il tuo sito)
+url_da_testare = "https://www.google.com" 
+analyzer = AEOAnalyzer(url_da_testare)
+
+print(f"Analisi in corso per: {url_da_testare}...")
+report = analyzer.get_audit_report()
+
+print("Risultato dell'audit:")
+print(report)
+
 # Configurazione Pagina
 st.set_page_config(page_title="SEO Strategy Dashboard", layout="wide")
 st.title("🚀 SEO Performance Analyzer")
