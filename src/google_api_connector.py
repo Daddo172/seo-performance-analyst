@@ -139,15 +139,19 @@ def fetch_ga4_ai_traffic(property_id, start_date, end_date):
         date_ranges=[DateRange(start_date=start_date, end_date=end_date)],
         dimensions=[Dimension(name="sessionSource")],
         metrics=[Metric(name="sessions")],
-        limit=20 # Prendiamo le prime 20 sorgenti
+        dimension_filter=FilterExpression(
+            filter=Filter(
+                field_name="sessionSource",
+                in_list_filter=Filter.InListFilter(values=ai_sources)
+            )
+        )
     )
     
+    # Esecuzione
     response = client.run_report(request)
     
-    # Ora stampiamo tutto quello che arriva
     ai_traffic = {}
     for row in response.rows:
-        source = row.dimension_values[0].value
-        sessions = int(row.metric_values[0].value)
-        ai_traffic[source] = sessions
+        ai_traffic[row.dimension_values[0].value] = int(row.metric_values[0].value)
+        
     return ai_traffic
