@@ -1,63 +1,48 @@
-🚀 SEO Performance Analyzer: End-to-End Suite
+# 🚀 AI SEO & AEO Audit Dashboard
 
-🎯 Panoramica del Progetto
+Dashboard interattiva sviluppata in **Streamlit** per il monitoraggio, l'analisi e l'ottimizzazione di siti web, progettata sia per i motori di ricerca tradizionali (SEO) che per i nuovi motori di risposta basati su Intelligenza Artificiale (AEO / GEO).
 
-Questo progetto è una suite completa di Data Engineering, Analytics e AI
-sviluppata per trasformare i dati grezzi di Google Search Console in una
-strategia SEO professionale. L'applicazione non si limita a visualizzare
-grafici, ma funge da vero consulente virtuale, identificando opportunità di
-crescita e ottimizzando i contenuti tramite Intelligenza Artificiale.
+L'applicazione unisce i dati quantitativi di traffico alla diagnostica qualitativa sulla struttura delle pagine, offrendo suggerimenti di riscrittura automatizzati tramite intelligenza artificiale.
 
-⚙️ Architettura del Sistema
+---
 
-Il sistema è costruito attorno a una pipeline modulare:
+## 🛠️ Funzionalità Attuali
 
-1.  Data Ingestion & Cleaning (processor.py): Modulo dedicato alla pulizia dati,
-    normalizzazione metrica (CTR/Posizione) e integrazione multi-file.
-2.  Persistence Layer: Utilizzo di SQLAlchemy e SQLite per la gestione
-    centralizzata dei dati (Master Data Structure).
-3.  Intelligence Engine (ai_seo.py): Integrazione delle API di Google Gemini
-    (LLM) per la classificazione dell'intento di ricerca e la generazione di
-    copy ottimizzato.
-4.  Dashboarding (app.py): Interfaccia web interattiva realizzata con Streamlit
-    e Plotly per il monitoraggio in tempo reale.
+### 1. Data Ingestion & Monitoraggio
+*   **GA4 AI Traffic Tracker:** Segmentazione automatica e filtraggio del traffico referral proveniente esclusivamente da Answer Engines (`chatgpt.com`, `perplexity.ai`, `gemini.google.com`, `copilot.microsoft.com`).
+*   **GSC Performance Analyzer:** Estrazione delle metriche chiave di posizionamento (Keyword, Impression, Clic) con sanitizzazione e controllo del CTR per identificare le pagine con potenziale inespresso.
 
-🛠 Funzionalità Implementate
+### 2. Diagnostica e Audit Tecnico (`src/aeo.py`)
+*   **AI Crawlability Check:** Scansione dinamica del file `robots.txt` del dominio per verificare lo stato dei principali crawler di intelligenza artificiale (`GPTBot`, `Claude-Web`, `PerplexityBot`, `Google-Extended`).
+*   **AEO Readiness Score:** Algoritmo proprietario che genera un punteggio da 0 a 100 pesato sulla presenza di segnali E-E-A-T, dati strutturati (`FAQPage`), scannabilità del testo (liste/tabelle) e frammenti di testo ottimizzati per il recupero semantico.
 
-  - Multi-File Processing: Supporto per il caricamento dinamico e l'unione di
-    file Query, Pagine, Date e Competitor.
-  - Diagnostic Audit: Calcolo automatico di un SEO Score sintetico per la
-    valutazione della salute delle pagine.
-  - Strategia SEO: Analisi dei "Quick Wins" (keyword ad alto potenziale in
-    seconda pagina) con calcolo del traffico mancante.
-  - Search Intent AI: Classificazione automatizzata delle keyword in
-    Informativa, Transazionale o Navigazionale.
-  - Crawl Efficiency: Modulo di monitoraggio della struttura dei link interni e
-    controllo dell'integrità (Broken Links / HTTPS).
-  - Modello di Forecasting: Implementazione di Prophet per serie temporali con
-    validazione tramite Backtesting (MAPE score) per garantire l'accuratezza delle previsioni.
+### 3. Ottimizzazione On-Page (AI Generative Engine)
+*   **SEO Optimizer:** Generazione guidata di tag Title e Meta Description ottimizzati per incrementare drasticamente il CTR nei risultati organici.
+*   **AEO FAQ Generator:** Creazione automatica di risposte brevi in stile conversazionale e del relativo blocco di markup `JSON-LD` pronto da copiare nel codice del sito.
 
+---
 
-📈 Roadmap & Sviluppi Futuri
+## 🔮 Sviluppi Futuri & Roadmap
 
-- [x] Pipeline di Automazione: Pipeline automatizzata su GitHub Actions per il
-  workflow di aggiornamento.
-- [x] Data Fusion: Integrazione file per analisi segmentata (Device/Paesi).
-- [x] Predizione: Implementazione di modelli di Machine Learning per la
-  previsione del traffico futuro.
-- [ ] SaaS Deployment: Espansione del tool per permettere l'analisi in modalità
-  multi-utente in cloud con modalità di salvataggio report con account personale.
+Sulla base dei più recenti studi accademici e di settore (tra cui il paper di riferimento *"GEO: Generative Engine Optimization"*), sono previste le seguenti estensioni del core applicativo:
 
-💻 Tech Stack
+### 1. Ottimizzazione Avanzata GEO & RAG
+*   **Calibrazione Text-Length:** Implementazione di un analizzatore di testo per verificare se i blocchi informativi si attestano nella "zona d'oro" dei sistemi RAG (~130-170 parole), massimizzando le probabilità di citazione.
+*   **Analisi della Densità Semantica (Entity Density):** Evoluzione del motore di crawling verso l'estrazione e la mappatura di entità semantiche correlate rispetto alla vecchia ripetizione delle singole keyword.
 
-  - Languages: Python
-  - Libraries: Streamlit, Pandas, Plotly, SQLAlchemy, Google GenAI,
-    BeautifulSoup,prophet,scikit-learn.
-  - Cloud: Streamlit Cloud, GitHub Actions.
+### 2. Strutturazione del Contenuto e Segnali di Autorevolezza
+*   **Rilevamento del Pattern Domanda/Risposta:** Parsing euristico avanzato per premiare i testi strutturati con intestazioni (`H2`/`H3`) poste come domande reali dell'utente e seguite immediatamente da frasi definitorie dirette (es. *"X è..."*).
+*   **Verifica E-E-A-T Estesa:** Implementazione di controlli automatizzati sulla presenza di metadati autore, date di ultimo aggiornamento del contenuto e citazioni a fonti esterne autorevoli.
 
-Perché questo progetto?
+### 3. Sandbox Sperimentale e Misurazione (Case Studies Tracker)
+*   **Diario dei Test A/B AEO:** Sviluppo di un database locale (o tab dedicata) per registrare gli esperimenti sul campo: tracciamento dell'URL, tattica applicata, data della modifica e check-point dopo alcune settimane per misurare la variazione delle citazioni reali.
+*   **AI Share of Voice Monitor:** Cruscotto di tracciamento per archiviare lo storico del posizionamento del brand all'interno dei motori generativi durante i test manuali su prompt specifici.
 
-Questa suite dimostra la capacità di gestire l'intero ciclo di vita del dato:
-dalla pulizia (ETL), alla memorizzazione strutturata (Database), fino alla
-presentazione strategica (Dashboard & AI).
+---
 
+## 📦 Installazione e Avvio Rapido
+
+1. **Clona la repository** ed entra nella cartella del progetto:
+   ```bash
+   git clone <url-repository>
+   cd seo-aeo-dashboard
