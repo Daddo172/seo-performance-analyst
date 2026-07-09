@@ -189,9 +189,6 @@ if 'seo_data' in st.session_state:
                             st.success(f"**Domanda:** {item['question']}")
                             st.info(f"**Risposta:** {item['answer']}")
                         
-                        # Opzionale: mostriamo il codice JSON da copiare
-                        st.code(json.dumps(risultati['schema_ld'], indent=2), language="json")
-
 else:
     st.sidebar.header("Carica i Dati")
     uploaded_query = st.sidebar.file_uploader("Carica Query.csv", type=['csv'])
