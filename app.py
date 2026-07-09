@@ -10,7 +10,7 @@ from src.processor import get_competitor_gap ,analyze_content_decay,calculate_ke
 from src.broken_links import check_broken_links
 from src.technical_audit import check_ssl
 from src.forecasting import train_and_forecast, perform_backtest
-from src.aeo import AEOAnalyzer
+from src.aeo import AEOAnalyzer,audit_robots_txt, analyze_page_aeo, calculate_aeo_score
 
 
 
@@ -127,6 +127,22 @@ if 'seo_data' in st.session_state:
                         st.success("✨ Ecco le proposte di ottimizzazione generate dall'Intelligenza Artificiale:")
                         st.markdown(ai_suggestions)
     with tab3:
+        st.header("AEO Audit")
+        target_url = st.text_input("Inserisci URL da analizzare")
+        if st.button("Avvia Audit AEO"):
+            with st.spinner("Analisi in corso..."):
+                # 1. Robots
+                domain = "/".join(target_url.split('/')[:3])
+                robots = audit_robots_txt(domain)
+                # 2. Content
+                content_data = analyze_page_aeo(target_url)
+                # 3. Score
+                score = calculate_aeo_score(content_data, robots)
+                
+                # Display
+                st.metric("AEO Score", f"{score}/100")
+                st.json(robots)
+                st.write(f"Indicatori E-E-A-T trovati: {content_data['eeat_signals']}")
         st.header("AEO Readiness Audit")
         url_input = st.text_input("Inserisci l'URL della pagina da analizzare:")
         
