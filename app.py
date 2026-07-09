@@ -1,10 +1,11 @@
 import streamlit as st
 from datetime import datetime, timedelta
 import pandas as pd
+import json
 from src.seo_optimizer import find_quick_wins,scrape_current_tags
 from src.google_api_connector import get_credentials,fetch_gsc_data,fetch_ga4_data,get_merged_seo_data,fetch_ga4_ai_traffic
 import plotly.express as px
-from src.ai_seo import get_search_intent,generate_seo_suggestions
+from src.ai_seo import generate_aeo_faq,get_search_intent,generate_seo_suggestions
 from src.processor import get_competitor_gap ,analyze_content_decay,calculate_keyword_difficulty,perform_technical_audit, analyze_crawl_efficiency ,perform_technical_audit,add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date , load_devices , load_countries
 from src.broken_links import check_broken_links
 from src.technical_audit import check_ssl
@@ -59,7 +60,7 @@ if 'seo_data' in st.session_state:
     df_final = st.session_state['seo_data']
     
     # Creiamo due tab nella dashboard per organizzare il lavoro
-    tab1, tab2, tab3 = st.tabs(["📊 Panoramica Dati", "🚀 Modulo: Vincite Facili (Ottimizzazione CTR)", "AEO Readiness"])
+    tab1, tab2, tab3,tab4 = st.tabs(["📊 Panoramica Dati", "🚀 Modulo: Vincite Facili (Ottimizzazione CTR)", "AEO Readiness","generatore contenuti AEO"])
     
     with tab1:
         st.subheader("I tuoi dati SEO uniti")
@@ -153,6 +154,43 @@ if 'seo_data' in st.session_state:
                     st.bar_chart(df_ai.set_index('Sorgente'))
                 else:
                     st.info("Nessun traffico rilevato da sorgenti AI in questo periodo.")
+        
+    with tab4:
+        # --- TAB AEO GENERATOR ---
+        st.subheader("🤖 Generatore Contenuti AEO")
+
+        # 1. Input: Di cosa stiamo parlando? (Breve)
+        tema_input = st.text_input(
+            "Argomento per le FAQ", 
+            placeholder="es. Prezzi consulto veterinario, Cura gatti anziani..."
+        )
+
+        # 2. Input: Contesto del sito (Lungo)
+        # Possiamo pre-impostarlo con una descrizione standard se vuoi
+        context_input = st.text_area(
+            "Contesto del sito (di cosa parla la tua attività?)", 
+            value="Sito web di una clinica veterinaria specializzata in animali domestici."
+        )
+        
+        # 3. Bottone di azione
+        if st.button("Genera FAQ Ottimizzate"):
+            if not tema_input:
+                st.warning("Per favore, inserisci un argomento prima di generare!")
+            else:
+                with st.spinner("L'AI sta scrivendo le tue FAQ..."):
+                    # Qui chiamiamo la funzione che abbiamo creato prima
+                    risultati = generate_aeo_faq(tema_input, context_input)
+                    
+                    if "error" in risultati:
+                        st.error(f"Ops! Qualcosa è andato storto: {risultati['error']}")
+                    else:
+                        # Mostriamo i risultati
+                        for item in risultati['faq']:
+                            st.success(f"**Domanda:** {item['question']}")
+                            st.info(f"**Risposta:** {item['answer']}")
+                        
+                        # Opzionale: mostriamo il codice JSON da copiare
+                        st.code(json.dumps(risultati['schema_ld'], indent=2), language="json")
 
 else:
     st.sidebar.header("Carica i Dati")
