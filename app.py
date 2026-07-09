@@ -16,15 +16,6 @@ from src.aeo import AEOAnalyzer
 # Configurazione Pagina
 st.set_page_config(page_title="SEO Strategy Dashboard", layout="wide")
 st.title("🚀 SEO Performance Analyzer")
-# Proviamo ad analizzare una pagina di test (es. Google o il tuo sito)
-url_da_testare = "https://www.google.com" 
-analyzer = AEOAnalyzer(url_da_testare)
-
-print(f"Analisi in corso per: {url_da_testare}...")
-report = analyzer.get_audit_report()
-
-print("Risultato dell'audit:")
-print(report)
 st.markdown("Trasforma i dati di Search Console in strategie di crescita.")
 
 # 1. Box di caricamento dinamico
@@ -68,7 +59,7 @@ if 'seo_data' in st.session_state:
     df_final = st.session_state['seo_data']
     
     # Creiamo due tab nella dashboard per organizzare il lavoro
-    tab1, tab2 = st.tabs(["📊 Panoramica Dati", "🚀 Modulo: Vincite Facili (Ottimizzazione CTR)"])
+    tab1, tab2, tab3 = st.tabs(["📊 Panoramica Dati", "🚀 Modulo: Vincite Facili (Ottimizzazione CTR)", "AEO Readiness"])
     
     with tab1:
         st.subheader("I tuoi dati SEO uniti")
@@ -134,6 +125,22 @@ if 'seo_data' in st.session_state:
                         
                         st.success("✨ Ecco le proposte di ottimizzazione generate dall'Intelligenza Artificiale:")
                         st.markdown(ai_suggestions)
+    with tab3:
+        st.header("AEO Readiness Audit")
+        url_input = st.text_input("Inserisci l'URL della pagina da analizzare:")
+        
+        if st.button("Avvia Audit AEO"):
+            if url_input:
+                with st.spinner("Analisi in corso..."):
+                    analyzer = AEOAnalyzer(url_input)
+                    report = analyzer.get_audit_report()
+                    
+                    # Visualizzazione dei risultati
+                    st.subheader(f"Score AEO: {report['score']}/100")
+                    st.write("Dettaglio Audit:")
+                    st.json(report)
+            else:
+                st.warning("Inserisci un URL valido!") 
 
 else:
     st.sidebar.header("Carica i Dati")
