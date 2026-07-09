@@ -131,7 +131,8 @@ def fetch_ga4_ai_traffic(property_id, start_date, end_date):
 
     ai_sources = [
         "chatgpt.com", "openai.com", "perplexity.ai", "bing",
-        "bard.google.com", "gemini.google.com", "bing.com"
+        "bard.google.com", "gemini.google.com", "bing.com","claude.ai",
+    "duckduckgo.com"
     ]
     
     request = RunReportRequest(
