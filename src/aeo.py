@@ -127,9 +127,3 @@ def calculate_aeo_score(audit_data, robots_data):
     score += min(20, audit_data.get("scannability_score", 0))
     
     return int(score)
-
-# --- 4. GENERAZIONE FAQ (INTEGRATA) ---
-def generate_aeo_faq(topic, site_context, api_key):
-    # (Inserisci qui la funzione che abbiamo testato prima)
-    # Assicurati di passare la api_key dall'esterno
-    pass

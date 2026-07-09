@@ -203,6 +203,9 @@ if 'seo_data' in st.session_state:
                 
                 # Display
                 st.metric("AEO Score", f"{score}/100")
+                with st.expander("Vedi dettagli tecnici"):
+                    st.write("Robot.txt:", robots)
+                    st.write("Analisi pagina:", content_data)
                 st.json(robots)
                 st.write(f"Indicatori E-E-A-T trovati: {content_data['eeat_signals']}")
                         
