@@ -60,7 +60,7 @@ if 'seo_data' in st.session_state:
     df_final = st.session_state['seo_data']
     
     # Creiamo due tab nella dashboard per organizzare il lavoro
-    tab1, tab2, tab3,tab4 = st.tabs(["📊 Panoramica Dati", "🚀 Modulo: Vincite Facili (Ottimizzazione CTR)", "AEO Readiness","generatore contenuti AEO"])
+    tab1, tab2, tab3,tab4,tab5 = st.tabs(["📊 Panoramica Dati", "🚀 Modulo: Vincite Facili (Ottimizzazione CTR)", "AEO Readiness","generatore contenuti AEO","AEO AUDIT"])
     
     with tab1:
         st.subheader("I tuoi dati SEO uniti")
@@ -127,22 +127,6 @@ if 'seo_data' in st.session_state:
                         st.success("✨ Ecco le proposte di ottimizzazione generate dall'Intelligenza Artificiale:")
                         st.markdown(ai_suggestions)
     with tab3:
-        st.header("AEO Audit")
-        target_url = st.text_input("Inserisci URL da analizzare")
-        if st.button("Avvia Audit AEO"):
-            with st.spinner("Analisi in corso..."):
-                # 1. Robots
-                domain = "/".join(target_url.split('/')[:3])
-                robots = audit_robots_txt(domain)
-                # 2. Content
-                content_data = analyze_page_aeo(target_url)
-                # 3. Score
-                score = calculate_aeo_score(content_data, robots)
-                
-                # Display
-                st.metric("AEO Score", f"{score}/100")
-                st.json(robots)
-                st.write(f"Indicatori E-E-A-T trovati: {content_data['eeat_signals']}")
         st.header("AEO Readiness Audit")
         url_input = st.text_input("Inserisci l'URL della pagina da analizzare:")
         
@@ -204,6 +188,23 @@ if 'seo_data' in st.session_state:
                         for item in risultati['faq']:
                             st.success(f"**Domanda:** {item['question']}")
                             st.info(f"**Risposta:** {item['answer']}")
+    with tab5:
+        st.header("AEO Audit")
+        target_url = st.text_input("Inserisci URL da analizzare")
+        if st.button("Avvia Audit AEO"):
+            with st.spinner("Analisi in corso..."):
+                # 1. Robots
+                domain = "/".join(target_url.split('/')[:3])
+                robots = audit_robots_txt(domain)
+                # 2. Content
+                content_data = analyze_page_aeo(target_url)
+                # 3. Score
+                score = calculate_aeo_score(content_data, robots)
+                
+                # Display
+                st.metric("AEO Score", f"{score}/100")
+                st.json(robots)
+                st.write(f"Indicatori E-E-A-T trovati: {content_data['eeat_signals']}")
                         
 else:
     st.sidebar.header("Carica i Dati")
