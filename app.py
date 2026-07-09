@@ -2,7 +2,7 @@ import streamlit as st
 from datetime import datetime, timedelta
 import pandas as pd
 from src.seo_optimizer import find_quick_wins,scrape_current_tags
-from src.google_api_connector import get_credentials,fetch_gsc_data,fetch_ga4_data,get_merged_seo_data
+from src.google_api_connector import get_credentials,fetch_gsc_data,fetch_ga4_data,get_merged_seo_data,fetch_ga4_ai_traffic
 import plotly.express as px
 from src.ai_seo import get_search_intent,generate_seo_suggestions
 from src.processor import get_competitor_gap ,analyze_content_decay,calculate_keyword_difficulty,perform_technical_audit, analyze_crawl_efficiency ,perform_technical_audit,add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date , load_devices , load_countries
@@ -141,6 +141,17 @@ if 'seo_data' in st.session_state:
                     st.json(report)
             else:
                 st.warning("Inserisci un URL valido!") 
+        if st.button("Analizza Traffico AI"):
+            with st.spinner("Interrogazione GA4 in corso..."):
+                ai_data = fetch_ga4_ai_traffic(property_id, start_date, end_date) # La tua funzione
+                
+                if ai_data:
+                    # Trasformiamo il dizionario in un formato leggibile da Streamlit
+                    import pandas as pd
+                    df_ai = pd.DataFrame(list(ai_data.items()), columns=['Sorgente', 'Sessioni'])
+                    st.bar_chart(df_ai.set_index('Sorgente'))
+                else:
+                    st.info("Nessun traffico rilevato da sorgenti AI in questo periodo.")
 
 else:
     st.sidebar.header("Carica i Dati")

@@ -3,10 +3,10 @@ import streamlit as st
 from urllib.parse import urlparse
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from google.analytics.data_v1beta import BetaAnalyticsDataClient
-from google.analytics.data_v1beta.types import DateRange, Dimension, Metric, RunReportRequest
 import json, base64
 import streamlit as st
+from google.analytics.data_v1beta import BetaAnalyticsDataClient
+from google.analytics.data_v1beta.types import RunReportRequest, DateRange, Metric, Dimension, Filter, FilterExpression
 from google.oauth2 import service_account
 
 def get_credentials():
@@ -112,3 +112,38 @@ def get_merged_seo_data(site_url, property_id, start_date, end_date):
     df_merged[['sessions', 'conversions', 'active_users']] = df_merged[['sessions', 'conversions', 'active_users']].fillna(0)
     
     return df_merged
+
+@st.cache_data(ttl=3600)
+def fetch_ga4_ai_traffic(property_id, start_date, end_date):
+    """
+    Recupera sessioni segmentate per sorgenti AI (ChatGPT, Perplexity, etc.)
+    """
+    client = BetaAnalyticsDataClient() # Assicurati di avere il client inizializzato
+    
+    # Lista dei referrer AI da monitorare
+    ai_sources = [
+        "chatgpt.com", "openai.com", "perplexity.ai", 
+        "bard.google.com", "gemini.google.com", "bing.com"
+    ]
+    
+    request = RunReportRequest(
+        property=f"properties/{property_id}",
+        date_ranges=[DateRange(start_date=start_date, end_date=end_date)],
+        dimensions=[Dimension(name="sessionSource")],
+        metrics=[Metric(name="sessions")],
+        dimension_filter=FilterExpression(
+            filter=Filter(
+                field_name="sessionSource",
+                in_list_filter=Filter.InListFilter(values=ai_sources)
+            )
+        )
+    )
+    
+    response = client.run_report(request)
+    
+    # Trasformiamo la risposta in un dizionario pulito
+    ai_traffic = {}
+    for row in response.rows:
+        ai_traffic[row.dimension_values[0].value] = int(row.metric_values[0].value)
+        
+    return ai_traffic
