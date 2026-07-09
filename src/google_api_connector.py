@@ -115,11 +115,16 @@ def get_merged_seo_data(site_url, property_id, start_date, end_date):
 
 @st.cache_data(ttl=3600)
 def fetch_ga4_ai_traffic(property_id, start_date, end_date):
-    """
-    Recupera sessioni segmentate per sorgenti AI (ChatGPT, Perplexity, etc.)
-    """
+
     client = BetaAnalyticsDataClient() # Assicurati di avere il client inizializzato
-    
+
+    # --- AGGIUNTA: CONVERSIONE IN STRINGHE ---
+    # Se start_date o end_date sono oggetti date, li convertiamo in stringa YYYY-MM-DD
+    if hasattr(start_date, 'strftime'):
+        start_date = start_date.strftime('%Y-%m-%d')
+    if hasattr(end_date, 'strftime'):
+        end_date = end_date.strftime('%Y-%m-%d')
+    # ------------------------------------------
     # Lista dei referrer AI da monitorare
     ai_sources = [
         "chatgpt.com", "openai.com", "perplexity.ai", 
