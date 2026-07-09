@@ -142,6 +142,7 @@ if 'seo_data' in st.session_state:
             else:
                 st.warning("Inserisci un URL valido!") 
         if st.button("Analizza Traffico AI"):
+            st.cache_data.clear()
             with st.spinner("Interrogazione GA4 in corso..."):
                 ai_data = fetch_ga4_ai_traffic(property_id, start_date, end_date) # La tua funzione
                 

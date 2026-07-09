@@ -130,7 +130,7 @@ def fetch_ga4_ai_traffic(property_id, start_date, end_date):
         end_date = end_date.strftime('%Y-%m-%d')
 
     ai_sources = [
-        "chatgpt.com", "openai.com", "perplexity.ai", 
+        "chatgpt.com", "openai.com", "perplexity.ai", "bing",
         "bard.google.com", "gemini.google.com", "bing.com"
     ]
     
