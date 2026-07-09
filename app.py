@@ -9,9 +9,13 @@ from src.processor import get_competitor_gap ,analyze_content_decay,calculate_ke
 from src.broken_links import check_broken_links
 from src.technical_audit import check_ssl
 from src.forecasting import train_and_forecast, perform_backtest
-
 from src.aeo import AEOAnalyzer
 
+
+
+# Configurazione Pagina
+st.set_page_config(page_title="SEO Strategy Dashboard", layout="wide")
+st.title("🚀 SEO Performance Analyzer")
 # Proviamo ad analizzare una pagina di test (es. Google o il tuo sito)
 url_da_testare = "https://www.google.com" 
 analyzer = AEOAnalyzer(url_da_testare)
@@ -21,10 +25,6 @@ report = analyzer.get_audit_report()
 
 print("Risultato dell'audit:")
 print(report)
-
-# Configurazione Pagina
-st.set_page_config(page_title="SEO Strategy Dashboard", layout="wide")
-st.title("🚀 SEO Performance Analyzer")
 st.markdown("Trasforma i dati di Search Console in strategie di crescita.")
 
 # 1. Box di caricamento dinamico
