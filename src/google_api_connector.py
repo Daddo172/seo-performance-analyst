@@ -123,35 +123,22 @@ def fetch_ga4_ai_traffic(property_id, start_date, end_date):
     # 2. Inizializza il client PASSANDO le credenziali (questa è la chiave!)
     client = BetaAnalyticsDataClient(credentials=creds)
     
-    # 3. Gestione date (ricorda la conversione in stringa per evitare il crash precedente)
-    if hasattr(start_date, 'strftime'):
-        start_date = start_date.strftime('%Y-%m-%d')
-    if hasattr(end_date, 'strftime'):
-        end_date = end_date.strftime('%Y-%m-%d')
-
-    ai_sources = [
-        "chatgpt.com", "openai.com", "perplexity.ai", 
-        "bard.google.com", "gemini.google.com", "bing.com"
-    ]
-    
+    # --- RIMUOVI O COMMENTA IL FILTRO ---
+    # Invece di filtrare, chiediamo tutte le sorgenti, così vediamo cosa c'è
     request = RunReportRequest(
         property=f"properties/{property_id}",
         date_ranges=[DateRange(start_date=start_date, end_date=end_date)],
         dimensions=[Dimension(name="sessionSource")],
         metrics=[Metric(name="sessions")],
-        dimension_filter=FilterExpression(
-            filter=Filter(
-                field_name="sessionSource",
-                in_list_filter=Filter.InListFilter(values=ai_sources)
-            )
-        )
+        limit=20 # Prendiamo le prime 20 sorgenti
     )
     
-    # Esecuzione
     response = client.run_report(request)
     
+    # Ora stampiamo tutto quello che arriva
     ai_traffic = {}
     for row in response.rows:
-        ai_traffic[row.dimension_values[0].value] = int(row.metric_values[0].value)
-        
+        source = row.dimension_values[0].value
+        sessions = int(row.metric_values[0].value)
+        ai_traffic[source] = sessions
     return ai_traffic
