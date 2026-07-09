@@ -113,7 +113,7 @@ def generate_aeo_faq(topic, site_context):
 
     # --- 🌐 CHIAMATA REST DIRETTA ---
     # Nota: Ho usato gemini-1.5-flash che è stabile e veloce
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
     headers = {"Content-Type": "application/json"}
     payload = {"contents": [{"parts": [{"text": prompt}]}]}
     
