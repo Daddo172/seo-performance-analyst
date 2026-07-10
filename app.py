@@ -10,7 +10,7 @@ from src.processor import get_competitor_gap ,analyze_content_decay,calculate_ke
 from src.broken_links import check_broken_links
 from src.technical_audit import check_ssl
 from src.forecasting import train_and_forecast, perform_backtest
-from src.aeo import AEOAnalyzer,audit_robots_txt, analyze_page_aeo, calculate_aeo_score
+from src.aeo import analyze_page_geo_features,calculate_scientific_geo_score,AEOAnalyzer,audit_robots_txt, analyze_page_aeo, calculate_aeo_score
 
 
 
@@ -60,7 +60,7 @@ if 'seo_data' in st.session_state:
     df_final = st.session_state['seo_data']
     
     # Creiamo due tab nella dashboard per organizzare il lavoro
-    tab1, tab2, tab3,tab4,tab5 = st.tabs(["📊 Panoramica Dati", "🚀 Modulo: Vincite Facili (Ottimizzazione CTR)", "AEO Readiness","generatore contenuti AEO","AEO AUDIT"])
+    tab1, tab2, tab3,tab4,tab5,tab6 = st.tabs(["📊 Panoramica Dati", "🚀 Modulo: Vincite Facili (Ottimizzazione CTR)", "AEO Readiness","generatore contenuti AEO","AEO AUDIT","GEO"])
     
     with tab1:
         st.subheader("I tuoi dati SEO uniti")
@@ -208,7 +208,62 @@ if 'seo_data' in st.session_state:
                     st.write("Analisi pagina:", content_data)
                 st.json(robots)
                 st.write(f"Indicatori E-E-A-T trovati: {content_data['eeat_signals']}")
+    with tab6:
+            st.title("📊 AEO & GEO Scientific Audit Engine")
+            st.write("Verifica se la tua pagina è ottimizzata per l'architettura RAG dei motori generativi secondo i criteri del paper GEO (KDD 2024).")
+
+            # Input dell'utente
+            target_url = st.text_input("Inserisci l'URL della pagina da analizzare:", value="https://www.volpepasinibistroitaliano.it/")
+            intent_type = st.selectbox("Seleziona l'intento di ricerca del target:", 
+                                    options=["scientific_medical", "commercial_lifestyle"],
+                                    format_func=lambda x: "Scientifico / Accademico / Medico" if x == "scientific_medical" else "Commerciale / Lifestyle / Opinione")
+
+            if st.button("Esegui Audit Scientifico"):
+                if not target_url:
+                    st.warning("Inserisci un URL valido.")
+                else:
+                    with st.spinner("Estrazione codice ed esecuzione dei modelli euristici..."):
+                        # 1. Recupero dominio e controllo Robots
+                        domain = "/".join(target_url.split('/')[:3])
+                        robots_data = audit_robots_txt(domain)
                         
+                        # 2. Analisi delle feature della pagina
+                        page_features = analyze_page_geo_features(target_url)
+                        
+                        if "error" in page_features:
+                            st.error(f"Errore durante l'analisi: {page_features['error']}")
+                        else:
+                            # 3. Calcolo dello Score scientifico pesato
+                            score, raccomandazioni = calculate_scientific_geo_score(page_features, robots_data, intent_type)
+                            
+                            # --- VISUALIZZAZIONE RISULTATI ---
+                            st.write("---")
+                            col1, col2 = st.columns([1, 2])
+                            
+                            with col1:
+                                st.metric(label="GEO Impression Score", value=f"{score}/100")
+                                if score >= 80:
+                                    st.success("🎯 Ottima ottimizzazione GEO!")
+                                elif score >= 50:
+                                    st.warning("⚠️ Struttura migliorabile.")
+                                else:
+                                    st.error("🚨 La pagina rischia l'invisibilità nei motori AI.")
+                                    
+                            with col2:
+                                st.subheader("📋 Raccomandazioni Prioritizzate")
+                                if not raccomandazioni:
+                                    st.success("Eccellente! La pagina segue tutte le 9 strategie del framework GEO.")
+                                else:
+                                    for racf in raccomandazioni:
+                                        st.write(racf)
+                            
+                            st.write("---")
+                            # Dettagli Tecnici Espandibili per trasparenza
+                            with st.expander("🛠️ Vedi Dati Grezzi di Debug Semantico (Euristiche RAG)"):
+                                st.json({
+                                    "Stato Robots.txt": robots_data,
+                                    "Metriche Interne Pagina": page_features
+                                })                   
 else:
     st.sidebar.header("Carica i Dati")
     uploaded_query = st.sidebar.file_uploader("Carica Query.csv", type=['csv'])
