@@ -2,7 +2,6 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import json
-from urllib.robotparser import RobotFileParser
 
 
 class AEOAnalyzer:
@@ -63,11 +62,21 @@ class AEOAnalyzer:
         }
 # --- 1. AUDIT CRAWLABILITÀ ---
 def audit_robots_txt(domain):
-    rp = RobotFileParser()
-    rp.set_url(f"{domain}/robots.txt")
-    rp.read()
+    """Verifica se i principali bot AI sono bloccati nel robots.txt."""
     bots = ["GPTBot", "Claude-Web", "PerplexityBot", "Google-Extended"]
-    return {bot: ("✅ Consentito" if rp.can_fetch(bot, "/") else "❌ Bloccato") for bot in bots}
+    results = {bot: "✅ Consentito" for bot in bots}
+    
+    try:
+        response = requests.get(f"{domain}/robots.txt", timeout=5)
+        if response.status_code == 200:
+            content = response.text
+            for bot in bots:
+                # Cerca direttive Disallow che menzionano il bot
+                if re.search(f"User-agent: {bot}.*Disallow: /", content, re.IGNORECASE):
+                    results[bot] = "❌ Bloccato"
+    except:
+        return {bot: "⚠️ Errore fetch" for bot in bots}
+    return results
 
 # --- 2. ANALISI E-E-A-T E SCANNABILITÀ ---
 def analyze_page_aeo(url):
@@ -168,8 +177,8 @@ def analyze_page_geo_features(url):
                 rag_compliant_blocks += 1
 
         # 6. Presenza Dati Strutturati FAQ
-        schemas = [s.get_text() for s in soup.find_all("script", type="application/ld+json") if s.get_text(strip=True)]
-        has_faq = any("FAQPage" in s for s in schemas)
+        schemas = [s.string for s in soup.find_all("script", type="application/ld+json") if s.string]
+        has_faq_schema = any("FAQPage" in s for s in schemas)
         
         # 7. Scannabilità (Presenza di Liste o Tabelle)
         lists_and_tables = len(soup.find_all(['ul', 'ol', 'table']))
