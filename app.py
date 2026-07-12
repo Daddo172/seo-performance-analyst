@@ -4,6 +4,7 @@ import pandas as pd
 import json
 import os
 import re
+import time
 import plotly.express as px
 from datetime import datetime
 from google import genai
@@ -58,27 +59,53 @@ def run_gemini_polling_logic():
     client = genai.Client()
     db = load_local_json()
     
-    st.toast("Avvio del polling con Google Gemini...")
+    st.toast("Avvio del polling ottimizzato con Google Gemini...")
     
-    # Identifica il brand del cliente per il sentiment
     client_brand_name = next((e["name"] for e in db["entities"] if e["is_client"]), "Client")
-    
-    model_polling = "gemini-2.5-flash"
-    model_parser = "gemini-2.5-flash"
+    model_name = "gemini-2.5-flash"
 
     for prompt in db["prompts"]:
         try:
-            # --- FASE 1: Polling del Modello ---
-            config_polling = types.GenerateContentConfig(temperature=0.2)
-            response = client.models.generate_content(
-                model=model_polling,
-                contents=prompt["text"],
-                config=config_polling
+            # --- FASE 1: Chiamata Singola All-in-One ---
+            # Istruiamo il modello a fare sia da motore di risposta sia da analista SEO in un colpo solo
+            system_instruction = (
+                "Sei un esperto assistente AI e analista SEO. Rispondi alla query dell'utente in modo esaustivo "
+                "inserendola nel campo 'raw_response'. Contemporaneamente, analizza il testo che hai appena generato "
+                f"ed estrai il sentiment verso il brand '{client_brand_name}' (da -1.00 a 1.00) e tutti gli URL completi citati."
             )
-            raw_response = response.text
+            
+            config = types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                temperature=0.3, # Un buon bilanciamento tra creatività della risposta e stabilità dei dati
+                response_mime_type="application/json",
+                # Definiamo lo schema che include sia la risposta testuale che i metadati
+                response_schema=types.Schema(
+                    type=types.Type.OBJECT,
+                    properties={
+                        "raw_response": types.Schema(type=types.Type.STRING, description="La risposta testuale estesa alla query."),
+                        "sentiment": types.Schema(type=types.Type.NUMBER, description="Sentiment score da -1.00 a 1.00."),
+                        "urls": types.Schema(type=types.Type.ARRAY, items=types.Schema(type=types.Type.STRING), description="Lista degli URL citati."),
+                    },
+                    required=["raw_response", "sentiment", "urls"],
+                ),
+            )
+
+            # Eseguiamo l'UNICA chiamata API necessaria per questo prompt
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt["text"],
+                config=config
+            )
+            
+            # Decodifichiamo il blocco JSON ricevuto
+            data_parsed = json.loads(response.text)
+            raw_response = data_parsed.get("raw_response", "")
+            sentiment = data_parsed.get("sentiment", 0.0)
+            citations = data_parsed.get("urls", [])
+            
             raw_lower = raw_response.lower()
 
-            # --- FASE 2: Entity Matching tramite Regex ---
+            # --- FASE 2: Entity Matching tramite Regex (Locale e istantaneo) ---
             detected_entities_ids = []
             for entity in db["entities"]:
                 for pattern in entity["patterns"]:
@@ -86,56 +113,34 @@ def run_gemini_polling_logic():
                         detected_entities_ids.append(entity["id"])
                         break
 
-            # --- FASE 3: Sentiment & Citations con Structured Output (JSON) ---
-            system_instruction = (
-                "Sei un analista dati SEO esperto. Analizza il testo fornito ed estrai il sentiment verso il brand "
-                f"'{client_brand_name}' (un float compreso tra -1.00 e 1.00) e una lista di tutti gli URL completi citati nel testo."
-            )
-            
-            config_parser = types.GenerateContentConfig(
-                system_instruction=system_instruction,
-                temperature=0.0,
-                response_mime_type="application/json",
-                response_schema=types.Schema(
-                    type=types.Type.OBJECT,
-                    properties={
-                        "sentiment": types.Schema(type=types.Type.NUMBER),
-                        "urls": types.Schema(type=types.Type.ARRAY, items=types.Schema(type=types.Type.STRING)),
-                    },
-                    required=["sentiment", "urls"],
-                ),
-            )
-
-            parser_response = client.models.generate_content(
-                model=model_parser,
-                contents=f"Analizza questo testo:\n\n{raw_response}",
-                config=config_parser
-            )
-            
-            data_parsed = json.loads(parser_response.text)
-            
-            # --- FASE 4: Append del risultato nel nostro finto DB JSON ---
+            # --- FASE 3: Salvataggio nel DB JSON ---
             new_result = {
                 "result_id": len(db["results"]) + 1,
                 "prompt_id": prompt["id"],
-                "model_name": model_polling,
+                "model_name": model_name,
                 "raw_response": raw_response,
                 "detected_entities": detected_entities_ids,
-                "sentiment_score": data_parsed.get("sentiment", 0.0),
-                "citations": data_parsed.get("urls", []),
+                "sentiment_score": sentiment,
+                "citations": citations,
                 "polled_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
             
             db["results"].append(new_result)
-            print(f"[SUCCESS] Polling completato per prompt: {prompt['id']}")
+            print(f"[SUCCESS] Risposta e analisi salvate per prompt {prompt['id']}")
+            
+            # --- FASE 4: Pausa di Sicurezza Anti-Capottamento ---
+            # Mettiamo in pausa lo script per 2 secondi prima del prossimo prompt.
+            # Questo evita di saturare i limiti di Requests Per Minute del tier gratuito.
+            time.sleep(2)
 
         except Exception as e:
             st.error(f"Errore sul prompt {prompt['id']}: {str(e)}")
+            # Se andiamo in errore di quota, aspettiamo comunque per far respirare l'API
+            time.sleep(5)
             
-    # Salva tutto su file
+    # Salva il file aggiornato
     save_local_json(db)
     st.success("Dati salvati localmente in ai_polling_results.json!")
-
 # ==========================================
 # 3. INTERFACCIA UTENTE (STREAMLIT UI)
 # ==========================================
