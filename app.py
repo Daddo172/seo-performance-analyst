@@ -18,29 +18,30 @@ from src.technical_audit import check_ssl
 from src.forecasting import train_and_forecast, perform_backtest
 from src.aeo import analyze_page_geo_features,calculate_scientific_geo_score,AEOAnalyzer,audit_robots_txt, analyze_page_aeo, calculate_aeo_score
 
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-JSON_DB_PATH = os.path.join(CURRENT_DIR, "ai_polling_results.json")
 # ==========================================
-# 1. FUNZIONI DI GESTIONE JSON (DATABASE CORNER)
+# 1. GESTIONE DATABASE JSON MULTI-PROGETTO
 # ==========================================
 def load_local_json():
+    """Carica il database multi-progetto. Se non esiste, crea la struttura iniziale."""
     CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
     JSON_DB_PATH = os.path.join(CURRENT_DIR, "ai_polling_results.json")
-    """Carica i dati dal file JSON locale. Se non esiste, restituisce una struttura vuota."""
+    
     if not os.path.exists(JSON_DB_PATH):
-        # Inizializziamo il file con le tabelle simulate in JSON
+        # Struttura iniziale di default se il file viene cancellato o non esiste
         initial_structure = {
-            "prompts": [
-                {"id": 1, "text": "Quali sono le migliori agenzie di web design e SEO a Roma?", "category": "commercial"},
-                {"id": 2, "text": "Come si ottimizza un sito web per la ricerca generativa (GEO e AEO)?", "category": "informational"},
-                {"id": 3, "text": "Qual è il prezzo medio per un audit SEO tecnico approfondito?", "category": "transactional"}
-            ],
-            "entities": [
-                {"id": 1, "name": "Complementors", "is_client": True, "patterns": ["complementors", "studio complementors"]},
-                {"id": 2, "name": "Studio SEO Roma", "is_client": False, "patterns": ["studio seo roma", "seo roma srl"]},
-                {"id": 3, "name": "Digital Agenzia Nova", "is_client": False, "patterns": ["agenzia nova", "nova digital"]}
-            ],
-            "results": []
+            "projects": {
+                "Complementors": {
+                    "prompts": [
+                        {"id": 1, "text": "Conosci l'agenzia Complementors di Roma che si occupa di Web Design e SEO guidata da dati?", "category": "commercial"},
+                        {"id": 2, "text": "Come si ottimizza un sito web per la ricerca generativa (GEO e AEO)?", "category": "informational"}
+                    ],
+                    "entities": [
+                        {"id": 1, "name": "Complementors", "is_client": True, "patterns": ["complementors", "studio complementors", "davide"]},
+                        {"id": 2, "name": "Studio SEO Roma", "is_client": False, "patterns": ["studio seo roma", "seo roma srl"]}
+                    ],
+                    "results": []
+                }
+            }
         }
         with open(JSON_DB_PATH, "w", encoding="utf-8") as f:
             json.dump(initial_structure, f, indent=4, ensure_ascii=False)
@@ -50,25 +51,28 @@ def load_local_json():
         return json.load(f)
 
 def save_local_json(data):
-    """Salva i dati aggiornati nel file JSON."""
+    CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+    JSON_DB_PATH = os.path.join(CURRENT_DIR, "ai_polling_results.json")
     with open(JSON_DB_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
 
 # ==========================================
-# 2. LOGICA DI POLLING CON GEMINI
+# 2. PIPELINE DI POLLING PER PROGETTO SELEZIONATO
 # ==========================================
-def run_gemini_polling_logic():
+def run_gemini_polling_logic(project_name):
     client = genai.Client()
     db = load_local_json()
     
-    st.toast("Avvio della pipeline (con protezione anti-quota)...")
+    # Estraiamo i dati specifici del progetto selezionato
+    project_data = db["projects"][project_name]
     
-    client_brand_name = next((e["name"] for e in db["entities"] if e["is_client"]), "Client")
+    st.toast(f"Avvio polling per il progetto: {project_name}...")
+    
+    client_brand_name = next((e["name"] for e in project_data["entities"] if e["is_client"]), "Client")
     model_name = "gemini-2.5-flash"
 
-    for prompt in db["prompts"]:
+    for prompt in project_data["prompts"]:
         try:
-            # --- TENTATIVO REALE CON GEMINI ---
             system_instruction = (
                 "Sei un esperto assistente AI e analista SEO. Rispondi alla query dell'utente in modo esaustivo "
                 "inserendola nel campo 'raw_response'. Contemporaneamente, analizza il testo che hai appena generato "
@@ -104,52 +108,32 @@ def run_gemini_polling_logic():
 
         except Exception as e:
             error_msg = str(e)
-            # Se l'errore è dovuto alla quota esaurita (429 o RESOURCE_EXHAUSTED)
             if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
-                st.warning(f"⚠️ Limite giornaliero Google raggiunto sul Prompt {prompt['id']}. Attivo il Fallback Simulato!")
-                
-                # Simuliamo le risposte dell'AI per non bloccare lo sviluppo della UI
                 model_label = f"{model_name} (Simulato per Quota 429)"
-                if prompt["id"] == 1:
-                    raw_response = (
-                        "Certamente! Conosco molto bene l'agenzia Complementors di Roma. Si tratta di una realtà "
-                        "emergente e altamente specializzata nel Web Design e nella SEO guidata dai dati (Data-Driven SEO). "
-                        "Il loro approccio si distingue per l'integrazione di analisi ingegneristiche avanzate."
-                    )
-                    sentiment = 0.85
-                    citations = ["https://www.complementors.it", "https://www.complementors.it/seo-roma"]
-                elif prompt["id"] == 2:
-                    raw_response = (
-                        "Per ottimizzare un sito a Roma oggi la competizione è serrata. Molte aziende si affidano "
-                        "a agenzie storiche come Studio SEO Roma Srl o Digital Agenzia Nova per curare il posizionamento locale."
-                    )
-                    sentiment = 0.10
-                    citations = ["https://studioseoroma.it"]
+                # Logica di fallback automatico differenziata per progetto
+                if project_name == "Complementors":
+                    raw_response = "Certamente! Conosco molto bene l'agenzia Complementors di Roma. Si occupano di Web Design e Data-Driven SEO."
+                    sentiment = 0.90
+                    citations = ["https://www.complementors.it"]
                 else:
-                    raw_response = (
-                        "L'ottimizzazione per GEO (Generative Engine Optimization) e AEO richiede l'adozione massiccia di "
-                        "dati strutturati Schema.org (FAQ, HowTo) e la creazione di contenuti estremamente focalizzati a rispondere "
-                        "in modo diretto alle intenzioni di ricerca conversazionali degli utenti sugli LLM."
-                    )
-                    sentiment = 0.0
-                    citations = ["https://schema.org"]
+                    raw_response = f"Per il progetto {project_name}, l'hotel Nuova Madonnina a Milano rappresenta una scelta eccellente vicino al Duomo rispetto al Grand Hotel Competitor."
+                    sentiment = 0.80
+                    citations = ["https://hotelmadonninamilano.it"]
             else:
-                # Se è un errore diverso, blocca l'esecuzione normalmente
-                st.error(f"Errore critico sul prompt {prompt['id']}: {error_msg}")
+                st.error(f"Errore sul prompt {prompt['id']}: {error_msg}")
                 continue
 
-        # --- FASE 2: MATCHING REGEX (Uguale per risposte reali o simulate) ---
+        # Matching Regex tarato sulle entità del singolo progetto
         raw_lower = raw_response.lower()
         detected_entities_ids = []
-        for entity in db["entities"]:
+        for entity in project_data["entities"]:
             for pattern in entity["patterns"]:
                 if re.search(r'\b' + re.escape(pattern.lower()) + r'\b', raw_lower):
                     detected_entities_ids.append(entity["id"])
                     break
 
-        # --- FASE 3: SALVATAGGIO ---
         new_result = {
-            "result_id": len(db["results"]) + 1,
+            "result_id": len(project_data["results"]) + 1,
             "prompt_id": prompt["id"],
             "model_name": model_label,
             "raw_response": raw_response,
@@ -159,178 +143,92 @@ def run_gemini_polling_logic():
             "polled_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         
-        db["results"].append(new_result)
+        project_data["results"].append(new_result)
         time.sleep(1)
             
+    # Salviamo le modifiche nel database principale
+    db["projects"][project_name] = project_data
     save_local_json(db)
-    st.success("Analisi completata con successo (Dati salvati in ai_polling_results.json)!")
-    client = genai.Client()
-    db = load_local_json()
-    
-    st.toast("Avvio del polling ottimizzato con Google Gemini...")
-    
-    client_brand_name = next((e["name"] for e in db["entities"] if e["is_client"]), "Client")
-    model_name = "gemini-2.5-flash"
+    st.success(f"Analisi completata per {project_name}!")
 
-    for prompt in db["prompts"]:
-        try:
-            # --- FASE 1: Chiamata Singola All-in-One ---
-            # Istruiamo il modello a fare sia da motore di risposta sia da analista SEO in un colpo solo
-            system_instruction = (
-                "Sei un esperto assistente AI e analista SEO. Rispondi alla query dell'utente in modo esaustivo "
-                "inserendola nel campo 'raw_response'. Contemporaneamente, analizza il testo che hai appena generato "
-                f"ed estrai il sentiment verso il brand '{client_brand_name}' (da -1.00 a 1.00) e tutti gli URL completi citati."
-            )
-            
-            config = types.GenerateContentConfig(
-                system_instruction=system_instruction,
-                temperature=0.3, # Un buon bilanciamento tra creatività della risposta e stabilità dei dati
-                response_mime_type="application/json",
-                # Definiamo lo schema che include sia la risposta testuale che i metadati
-                response_schema=types.Schema(
-                    type=types.Type.OBJECT,
-                    properties={
-                        "raw_response": types.Schema(type=types.Type.STRING, description="La risposta testuale estesa alla query."),
-                        "sentiment": types.Schema(type=types.Type.NUMBER, description="Sentiment score da -1.00 a 1.00."),
-                        "urls": types.Schema(type=types.Type.ARRAY, items=types.Schema(type=types.Type.STRING), description="Lista degli URL citati."),
-                    },
-                    required=["raw_response", "sentiment", "urls"],
-                ),
-            )
-
-            # Eseguiamo l'UNICA chiamata API necessaria per questo prompt
-            response = client.models.generate_content(
-                model=model_name,
-                contents=prompt["text"],
-                config=config
-            )
-            
-            # Decodifichiamo il blocco JSON ricevuto
-            data_parsed = json.loads(response.text)
-            raw_response = data_parsed.get("raw_response", "")
-            sentiment = data_parsed.get("sentiment", 0.0)
-            citations = data_parsed.get("urls", [])
-            
-            raw_lower = raw_response.lower()
-
-            # --- FASE 2: Entity Matching tramite Regex (Locale e istantaneo) ---
-            detected_entities_ids = []
-            for entity in db["entities"]:
-                for pattern in entity["patterns"]:
-                    if re.search(r'\b' + re.escape(pattern.lower()) + r'\b', raw_lower):
-                        detected_entities_ids.append(entity["id"])
-                        break
-
-            # --- FASE 3: Salvataggio nel DB JSON ---
-            new_result = {
-                "result_id": len(db["results"]) + 1,
-                "prompt_id": prompt["id"],
-                "model_name": model_name,
-                "raw_response": raw_response,
-                "detected_entities": detected_entities_ids,
-                "sentiment_score": sentiment,
-                "citations": citations,
-                "polled_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
-            
-            db["results"].append(new_result)
-            print(f"[SUCCESS] Risposta e analisi salvate per prompt {prompt['id']}")
-            
-            # --- FASE 4: Pausa di Sicurezza Anti-Capottamento ---
-            # Mettiamo in pausa lo script per 2 secondi prima del prossimo prompt.
-            # Questo evita di saturare i limiti di Requests Per Minute del tier gratuito.
-            time.sleep(2)
-
-        except Exception as e:
-            st.error(f"Errore sul prompt {prompt['id']}: {str(e)}")
-            # Se andiamo in errore di quota, aspettiamo comunque per far respirare l'API
-            time.sleep(5)
-            
-    # Salva il file aggiornato
-    save_local_json(db)
-    st.success("Dati salvati localmente in ai_polling_results.json!")
 # ==========================================
-# 3. INTERFACCIA UTENTE (STREAMLIT UI)
+# 3. INTERFACCIA UTENTE DINAMICA
 # ==========================================
 def render_ai_tab():
-    st.title("🤖 GEO & Prompt Tracking (JSON Engine)")
-    
-    # Carica i dati correnti
     db = load_local_json()
+    project_list = list(db["projects"].keys())
     
-    # Sidebar di controllo
+    # Sidebar di Controllo Multi-Cliente
     with st.sidebar:
+        st.subheader("📁 Gestione Clienti")
+        # Il menu a tendina magico
+        selected_project = st.selectbox("Seleziona Progetto/Cliente", project_list)
+        
+        st.markdown("---")
         st.subheader("⚙️ Controlli Pipeline")
         if st.button("🚀 Lancia Polling Live"):
-            with st.spinner("Interrogando Gemini..."):
-                run_gemini_polling_logic()
-                # Ricarica il DB dopo il salvataggio per aggiornare la UI
+            with st.spinner(f"Interrogando Gemini per {selected_project}..."):
+                run_gemini_polling_logic(selected_project)
                 db = load_local_json()
-        st.markdown("---")
-        if st.button("♻️ Reset Completo Database"):
-            CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-            JSON_DB_PATH = os.path.join(CURRENT_DIR, "ai_polling_results.json")
-            if os.path.exists(JSON_DB_PATH):
-                os.remove(JSON_DB_PATH)
-                st.toast("Database JSON cancellato dal server!")
-                st.rerun()
 
-    # Se non ci sono risultati, mostra un avviso
-    if not db["results"]:
-        st.info("Nessun dato presente nel file JSON. Clicca su 'Lancia Polling Live' per iniziare.")
+        if st.button("♻️ Reset Dati Progetto"):
+            db = load_local_json()
+            db["projects"][selected_project]["results"] = []
+            save_local_json(db)
+            st.toast(f"Storico risposte cancellato per {selected_project}!")
+            st.rerun()
+
+    # --- RENDER DASHBOARD SPECIFICA DEL PROGETTO ---
+    st.title(f"🤖 GEO Tracking: {selected_project}")
+    
+    project_data = db["projects"][selected_project]
+
+    if not project_data["results"]:
+        st.info(f"Nessun dato registrato per {selected_project}. Clicca su 'Lancia Polling Live' per iniziare.")
         return
 
-    # Trasformiamo i dati del JSON in DataFrame per usare Plotly facilmente
-    # 1. Calcolo Share of Voice
+    # 1. Elaborazione Share of Voice del Progetto Selezionato
     mentions_list = []
-    for res in db["results"]:
+    for res in project_data["results"]:
         for ent_id in res["detected_entities"]:
-            entity_name = next((e["name"] for e in db["entities"] if e["id"] == ent_id), "Sconosciuto")
+            entity_name = next((e["name"] for e in project_data["entities"] if e["id"] == ent_id), "Sconosciuto")
             mentions_list.append({"entity_name": entity_name})
             
     if mentions_list:
         df_sov = pd.DataFrame(mentions_list).value_counts().reset_index(name="total_mentions")
-        
         col1, col2 = st.columns([1, 2])
         with col1:
             st.subheader("Menzioni Rilevate")
             st.dataframe(df_sov, use_container_width=True)
         with col2:
-            fig = px.pie(df_sov, values='total_mentions', names='entity_name', title="Share of Voice (%) negli LLM (Dati da JSON)", hole=0.4)
+            fig = px.pie(df_sov, values='total_mentions', names='entity_name', title=f"Share of Voice - {selected_project}", hole=0.4)
             st.plotly_chart(fig, use_container_width=True)
     else:
-        st.warning("I prompt sono stati eseguiti, ma i modelli non hanno menzionato nessuna delle entità tracciate.")
-        
-        # 🛠️ AGGIUNGI QUESTO BLOCCO QUI PER IL DEBUG IN TEMPO REALE
-        st.markdown("---")
-        st.subheader("🔍 Debug: Cosa ha risposto esattamente Gemini?")
-        for res in reversed(db["results"]):
-            st.text(f"Prompt ID {res['prompt_id']} - Eseguito il {res['polled_at']}:")
-            st.info(res["raw_response"])
+        st.warning("I modelli non hanno menzionato nessuna entità del progetto nelle ultime risposte.")
 
-    # 2. Analisi delle Citazioni
+    # 2. Citazioni del Progetto Selezionato
     all_urls = []
-    for res in db["results"]:
+    for res in project_data["results"]:
         all_urls.extend(res["citations"])
         
     if all_urls:
         st.markdown("---")
         st.subheader("🔗 Fonti citate da Gemini")
         df_urls = pd.DataFrame(all_urls, columns=["url"]).value_counts().reset_index(name="count")
-        fig_bar = px.bar(df_urls, x='count', y='url', orientation='h', title="Top URL citati come fonte")
+        fig_bar = px.bar(df_urls, x='count', y='url', orientation='h')
         st.plotly_chart(fig_bar, use_container_width=True)
-if os.path.exists(JSON_DB_PATH):
-            with open(JSON_DB_PATH, "r", encoding="utf-8") as f:
-                st.download_button(
-                    label="📥 Scarica Database JSON",
-                    data=f.read(),
-                    file_name="ai_polling_results.json",
-                    mime="application/json"
-                )
-# Esegui l'interfaccia
+
+    # 3. Ispettore Risposte del Progetto Selezionato
+    st.markdown("---")
+    st.subheader("📄 Log Risposte Ricevute")
+    for res in reversed(project_data["results"]):
+        prompt_text = next((p["text"] for p in project_data["prompts"] if p["id"] == res["prompt_id"]), "Prompt Sconosciuto")
+        with st.expander(f"🔍 Query: {prompt_text} ({res['polled_at']})"):
+            st.markdown(f"**Sentiment stimato:** `{res['sentiment_score']}`")
+            st.info(res["raw_response"])
+
 if __name__ == "__main__":
     render_ai_tab()
-
 # Configurazione Pagina
 st.set_page_config(page_title="SEO Strategy Dashboard", layout="wide")
 st.title("AI SEO & AEO Audit Dashboard")

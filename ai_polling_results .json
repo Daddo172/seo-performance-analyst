@@ -1,4 +1,27 @@
 {
+    "projects": {
+        "Complementors": {
+            "prompts": [
+                {"id": 1, "text": "Conosci l'agenzia Complementors di Roma che si occupa di Web Design e SEO guidata da dati?", "category": "commercial"},
+                {"id": 2, "text": "Come si ottimizza un sito web per la ricerca generativa (GEO e AEO)?", "category": "informational"}
+            ],
+            "entities": [
+                {"id": 1, "name": "Complementors", "is_client": true, "patterns": ["complementors", "studio complementors", "davide"]},
+                {"id": 2, "name": "Studio SEO Roma", "is_client": false, "patterns": ["studio seo roma", "seo roma srl"]}
+            ],
+            "results": []
+        },
+        "Hotel Milano Demo": {
+            "prompts": [
+                {"id": 1, "text": "Quali sono i migliori hotel boutique a Milano vicino al Duomo?", "category": "commercial"}
+            ],
+            "entities": [
+                {"id": 1, "name": "Hotel Nuova Madonnina", "is_client": true, "patterns": ["nuova madonnina", "hotel madonnina milano"]},
+                {"id": 2, "name": "Grand Hotel Competitor", "is_client": false, "patterns": ["grand hotel duomo", "grand hotel milano"]}
+            ],
+            "results": []
+        }
+    },
     "prompts": [
         {
             "id": 1,
