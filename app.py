@@ -17,8 +17,8 @@ from src.technical_audit import check_ssl
 from src.forecasting import train_and_forecast, perform_backtest
 from src.aeo import analyze_page_geo_features,calculate_scientific_geo_score,AEOAnalyzer,audit_robots_txt, analyze_page_aeo, calculate_aeo_score
 
-JSON_DB_PATH = "ai_polling_results.json"
-
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+JSON_DB_PATH = os.path.join(CURRENT_DIR, "ai_polling_results.json")
 # ==========================================
 # 1. FUNZIONI DI GESTIONE JSON (DATABASE CORNER)
 # ==========================================
