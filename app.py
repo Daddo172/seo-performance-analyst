@@ -191,7 +191,14 @@ def render_ai_tab():
         df_urls = pd.DataFrame(all_urls, columns=["url"]).value_counts().reset_index(name="count")
         fig_bar = px.bar(df_urls, x='count', y='url', orientation='h', title="Top URL citati come fonte")
         st.plotly_chart(fig_bar, use_container_width=True)
-
+if os.path.exists(JSON_DB_PATH):
+            with open(JSON_DB_PATH, "r", encoding="utf-8") as f:
+                st.download_button(
+                    label="📥 Scarica Database JSON",
+                    data=f.read(),
+                    file_name="ai_polling_results.json",
+                    mime="application/json"
+                )
 # Esegui l'interfaccia
 if __name__ == "__main__":
     render_ai_tab()
