@@ -24,6 +24,8 @@ JSON_DB_PATH = os.path.join(CURRENT_DIR, "ai_polling_results.json")
 # 1. FUNZIONI DI GESTIONE JSON (DATABASE CORNER)
 # ==========================================
 def load_local_json():
+    CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+    JSON_DB_PATH = os.path.join(CURRENT_DIR, "ai_polling_results.json")
     """Carica i dati dal file JSON locale. Se non esiste, restituisce una struttura vuota."""
     if not os.path.exists(JSON_DB_PATH):
         # Inizializziamo il file con le tabelle simulate in JSON
@@ -158,6 +160,14 @@ def render_ai_tab():
                 run_gemini_polling_logic()
                 # Ricarica il DB dopo il salvataggio per aggiornare la UI
                 db = load_local_json()
+        st.markdown("---")
+        if st.button("♻️ Reset Completo Database"):
+            CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+            JSON_DB_PATH = os.path.join(CURRENT_DIR, "ai_polling_results.json")
+            if os.path.exists(JSON_DB_PATH):
+                os.remove(JSON_DB_PATH)
+                st.toast("Database JSON cancellato dal server!")
+                st.rerun()
 
     # Se non ci sono risultati, mostra un avviso
     if not db["results"]:
