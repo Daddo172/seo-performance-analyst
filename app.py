@@ -2,9 +2,14 @@ import streamlit as st
 from datetime import datetime, timedelta
 import pandas as pd
 import json
+import os
+import re
+import plotly.express as px
+from datetime import datetime
+from google import genai
+from google.genai import types
 from src.seo_optimizer import find_quick_wins,scrape_current_tags
 from src.google_api_connector import get_credentials,fetch_gsc_data,fetch_ga4_data,get_merged_seo_data,fetch_ga4_ai_traffic
-import plotly.express as px
 from src.ai_seo import generate_aeo_faq,get_search_intent,generate_seo_suggestions
 from src.processor import get_competitor_gap ,analyze_content_decay,calculate_keyword_difficulty,perform_technical_audit, analyze_crawl_efficiency ,perform_technical_audit,add_seo_score, generate_seo_report, diagnose_page, get_actionable_insight , load_query, load_pages, load_date , load_devices , load_countries
 from src.broken_links import check_broken_links
@@ -12,7 +17,184 @@ from src.technical_audit import check_ssl
 from src.forecasting import train_and_forecast, perform_backtest
 from src.aeo import analyze_page_geo_features,calculate_scientific_geo_score,AEOAnalyzer,audit_robots_txt, analyze_page_aeo, calculate_aeo_score
 
+JSON_DB_PATH = "ai_polling_results.json"
 
+# ==========================================
+# 1. FUNZIONI DI GESTIONE JSON (DATABASE CORNER)
+# ==========================================
+def load_local_json():
+    """Carica i dati dal file JSON locale. Se non esiste, restituisce una struttura vuota."""
+    if not os.path.exists(JSON_DB_PATH):
+        # Inizializziamo il file con le tabelle simulate in JSON
+        initial_structure = {
+            "prompts": [
+                {"id": 1, "text": "Quali sono le migliori agenzie di web design e SEO a Roma?", "category": "commercial"},
+                {"id": 2, "text": "Come si ottimizza un sito web per la ricerca generativa (GEO e AEO)?", "category": "informational"},
+                {"id": 3, "text": "Qual è il prezzo medio per un audit SEO tecnico approfondito?", "category": "transactional"}
+            ],
+            "entities": [
+                {"id": 1, "name": "Complementors", "is_client": True, "patterns": ["complementors", "studio complementors"]},
+                {"id": 2, "name": "Studio SEO Roma", "is_client": False, "patterns": ["studio seo roma", "seo roma srl"]},
+                {"id": 3, "name": "Digital Agenzia Nova", "is_client": False, "patterns": ["agenzia nova", "nova digital"]}
+            ],
+            "results": []
+        }
+        with open(JSON_DB_PATH, "w", encoding="utf-8") as f:
+            json.dump(initial_structure, f, indent=4, ensure_ascii=False)
+        return initial_structure
+    
+    with open(JSON_DB_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def save_local_json(data):
+    """Salva i dati aggiornati nel file JSON."""
+    with open(JSON_DB_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
+
+# ==========================================
+# 2. LOGICA DI POLLING CON GEMINI
+# ==========================================
+def run_gemini_polling_logic():
+    client = genai.Client()
+    db = load_local_json()
+    
+    st.toast("Avvio del polling con Google Gemini...")
+    
+    # Identifica il brand del cliente per il sentiment
+    client_brand_name = next((e["name"] for e in db["entities"] if e["is_client"]), "Client")
+    
+    model_polling = "gemini-2.5-pro"
+    model_parser = "gemini-2.5-flash"
+
+    for prompt in db["prompts"]:
+        try:
+            # --- FASE 1: Polling del Modello ---
+            config_polling = types.GenerateContentConfig(temperature=0.2)
+            response = client.models.generate_content(
+                model=model_polling,
+                contents=prompt["text"],
+                config=config_polling
+            )
+            raw_response = response.text
+            raw_lower = raw_response.lower()
+
+            # --- FASE 2: Entity Matching tramite Regex ---
+            detected_entities_ids = []
+            for entity in db["entities"]:
+                for pattern in entity["patterns"]:
+                    if re.search(r'\b' + re.escape(pattern.lower()) + r'\b', raw_lower):
+                        detected_entities_ids.append(entity["id"])
+                        break
+
+            # --- FASE 3: Sentiment & Citations con Structured Output (JSON) ---
+            system_instruction = (
+                "Sei un analista dati SEO esperto. Analizza il testo fornito ed estrai il sentiment verso il brand "
+                f"'{client_brand_name}' (un float compreso tra -1.00 e 1.00) e una lista di tutti gli URL completi citati nel testo."
+            )
+            
+            config_parser = types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                temperature=0.0,
+                response_mime_type="application/json",
+                response_schema=types.Schema(
+                    type=types.Type.OBJECT,
+                    properties={
+                        "sentiment": types.Schema(type=types.Type.NUMBER),
+                        "urls": types.Schema(type=types.Type.ARRAY, items=types.Schema(type=types.Type.STRING)),
+                    },
+                    required=["sentiment", "urls"],
+                ),
+            )
+
+            parser_response = client.models.generate_content(
+                model=model_parser,
+                contents=f"Analizza questo testo:\n\n{raw_response}",
+                config=config_parser
+            )
+            
+            data_parsed = json.loads(parser_response.text)
+            
+            # --- FASE 4: Append del risultato nel nostro finto DB JSON ---
+            new_result = {
+                "result_id": len(db["results"]) + 1,
+                "prompt_id": prompt["id"],
+                "model_name": model_polling,
+                "raw_response": raw_response,
+                "detected_entities": detected_entities_ids,
+                "sentiment_score": data_parsed.get("sentiment", 0.0),
+                "citations": data_parsed.get("urls", []),
+                "polled_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
+            
+            db["results"].append(new_result)
+            print(f"[SUCCESS] Polling completato per prompt: {prompt['id']}")
+
+        except Exception as e:
+            st.error(f"Errore sul prompt {prompt['id']}: {str(e)}")
+            
+    # Salva tutto su file
+    save_local_json(db)
+    st.success("Dati salvati localmente in ai_polling_results.json!")
+
+# ==========================================
+# 3. INTERFACCIA UTENTE (STREAMLIT UI)
+# ==========================================
+def render_ai_tab():
+    st.title("🤖 GEO & Prompt Tracking (JSON Engine)")
+    
+    # Carica i dati correnti
+    db = load_local_json()
+    
+    # Sidebar di controllo
+    with st.sidebar:
+        st.subheader("⚙️ Controlli Pipeline")
+        if st.button("🚀 Lancia Polling Live"):
+            with st.spinner("Interrogando Gemini..."):
+                run_gemini_polling_logic()
+                # Ricarica il DB dopo il salvataggio per aggiornare la UI
+                db = load_local_json()
+
+    # Se non ci sono risultati, mostra un avviso
+    if not db["results"]:
+        st.info("Nessun dato presente nel file JSON. Clicca su 'Lancia Polling Live' per iniziare.")
+        return
+
+    # Trasformiamo i dati del JSON in DataFrame per usare Plotly facilmente
+    # 1. Calcolo Share of Voice
+    mentions_list = []
+    for res in db["results"]:
+        for ent_id in res["detected_entities"]:
+            entity_name = next((e["name"] for e in db["entities"] if e["id"] == ent_id), "Sconosciuto")
+            mentions_list.append({"entity_name": entity_name})
+            
+    if mentions_list:
+        df_sov = pd.DataFrame(mentions_list).value_counts().reset_index(name="total_mentions")
+        
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            st.subheader("Menzioni Rilevate")
+            st.dataframe(df_sov, use_container_width=True)
+        with col2:
+            fig = px.pie(df_sov, values='total_mentions', names='entity_name', title="Share of Voice (%) negli LLM (Dati da JSON)", hole=0.4)
+            st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.warning("I prompt sono stati eseguiti, ma i modelli non hanno menzionato nessuna delle entità tracciate.")
+
+    # 2. Analisi delle Citazioni
+    all_urls = []
+    for res in db["results"]:
+        all_urls.extend(res["citations"])
+        
+    if all_urls:
+        st.markdown("---")
+        st.subheader("🔗 Fonti citate da Gemini")
+        df_urls = pd.DataFrame(all_urls, columns=["url"]).value_counts().reset_index(name="count")
+        fig_bar = px.bar(df_urls, x='count', y='url', orientation='h', title="Top URL citati come fonte")
+        st.plotly_chart(fig_bar, use_container_width=True)
+
+# Esegui l'interfaccia
+if __name__ == "__main__":
+    render_ai_tab()
 
 # Configurazione Pagina
 st.set_page_config(page_title="SEO Strategy Dashboard", layout="wide")
