@@ -201,10 +201,42 @@ def render_ai_tab():
     project_list = list(db["projects"].keys())
     
     # Sidebar di Controllo Multi-Cliente
+    # Sidebar di Controllo Multi-Cliente
     with st.sidebar:
         st.subheader("📁 Gestione Clienti")
-        # Il menu a tendina magico
         selected_project = st.selectbox("Seleziona Progetto/Cliente", project_list)
+        
+        # ➕ NUOVO PANNELLO: AGGIUNGI CLIENTE DIRETTAMENTE DALLA UI
+        st.markdown("---")
+        with st.expander("➕ Aggiungi Nuovo Cliente da UI"):
+            new_name = st.text_input("Nome Brand/Azienda", key="new_brand_name")
+            new_prompt = st.text_area("Prompt da monitorare", placeholder="es. Conosci l'azienda X di Roma?", key="new_brand_prompt")
+            new_patterns = st.text_input("Keywords tracciamento (separate da virgola)", placeholder="es. azienda x, brand x", key="new_brand_patterns")
+            
+            if st.button("💾 Salva Nuovo Cliente"):
+                if new_name and new_prompt and new_patterns:
+                    db = load_local_json()
+                    
+                    # Puliamo i pattern inseriti dall'utente separati da virgola
+                    patterns_list = [p.strip().lower() for p in new_patterns.split(",") if p.strip()]
+                    
+                    # Generiamo la struttura del nuovo progetto all'interno del DB
+                    db["projects"][new_name] = {
+                        "prompts": [
+                            {"id": 1, "text": new_prompt, "category": "commercial"}
+                        ],
+                        "entities": [
+                            {"id": 1, "name": new_name, "is_client": True, "patterns": patterns_list},
+                            {"id": 2, "name": "Studio SEO Roma", "is_client": False, "patterns": ["studio seo roma", "seo roma srl"]}
+                        ],
+                        "results": []
+                    }
+                    
+                    save_local_json(db)
+                    st.toast(f"Cliente '{new_name}' registrato con successo!")
+                    st.rerun()
+                else:
+                    st.error("Compila tutti i campi prima di salvare!")
         
         st.markdown("---")
         st.subheader("⚙️ Controlli Pipeline")
