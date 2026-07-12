@@ -43,6 +43,11 @@
                 "agenzia nova",
                 "nova digital"
             ]
+        },
+        {
+            "id": 4,
+            "text": "Quali agenzie a Roma integrano l'Intelligenza Artificiale nei flussi SEO?",
+            "category": "commercial"
         }
     ],
     "results": [

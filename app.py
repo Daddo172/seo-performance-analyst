@@ -179,6 +179,13 @@ def render_ai_tab():
             st.plotly_chart(fig, use_container_width=True)
     else:
         st.warning("I prompt sono stati eseguiti, ma i modelli non hanno menzionato nessuna delle entità tracciate.")
+        
+        # 🛠️ AGGIUNGI QUESTO BLOCCO QUI PER IL DEBUG IN TEMPO REALE
+        st.markdown("---")
+        st.subheader("🔍 Debug: Cosa ha risposto esattamente Gemini?")
+        for res in reversed(db["results"]):
+            st.text(f"Prompt ID {res['prompt_id']} - Eseguito il {res['polled_at']}:")
+            st.info(res["raw_response"])
 
     # 2. Analisi delle Citazioni
     all_urls = []
