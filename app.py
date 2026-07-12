@@ -63,7 +63,7 @@ def run_gemini_polling_logic():
     # Identifica il brand del cliente per il sentiment
     client_brand_name = next((e["name"] for e in db["entities"] if e["is_client"]), "Client")
     
-    model_polling = "gemini-2.5-pro"
+    model_polling = "gemini-2.5-flash"
     model_parser = "gemini-2.5-flash"
 
     for prompt in db["prompts"]:
