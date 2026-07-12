@@ -22,6 +22,48 @@ from src.aeo import analyze_page_geo_features,calculate_scientific_geo_score,AEO
 # 1. GESTIONE DATABASE JSON MULTI-PROGETTO
 # ==========================================
 def load_local_json():
+    """Carica il database multi-progetto. Se non esiste o è nel vecchio formato, lo rigenera in automatico."""
+    CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+    JSON_DB_PATH = os.path.join(CURRENT_DIR, "ai_polling_results.json")
+    
+    # Definiamo la struttura iniziale corretta
+    initial_structure = {
+        "projects": {
+            "Complementors": {
+                "prompts": [
+                    {"id": 1, "text": "Conosci l'agenzia Complementors di Roma che si occupa di Web Design e SEO guidata da dati?", "category": "commercial"},
+                    {"id": 2, "text": "Come si ottimizza un sito web per la ricerca generativa (GEO e AEO)?", "category": "informational"}
+                ],
+                "entities": [
+                    {"id": 1, "name": "Complementors", "is_client": True, "patterns": ["complementors", "studio complementors", "davide"]},
+                    {"id": 2, "name": "Studio SEO Roma", "is_client": False, "patterns": ["studio seo roma", "seo roma srl"]}
+                ],
+                "results": []
+            }
+        }
+    }
+    
+    # Se il file non esiste proprio, lo creiamo da zero
+    if not os.path.exists(JSON_DB_PATH):
+        with open(JSON_DB_PATH, "w", encoding="utf-8") as f:
+            json.dump(initial_structure, f, indent=4, ensure_ascii=False)
+        return initial_structure
+    
+    # Se il file esiste, lo leggiamo e verifichiamo il formato
+    try:
+        with open(JSON_DB_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        
+        # ⚠️ AGGIORNAMENTO DI SICUREZZA: Se il file è nel vecchio formato, lo sovrascriviamo
+        if "projects" not in data:
+            with open(JSON_DB_PATH, "w", encoding="utf-8") as f:
+                json.dump(initial_structure, f, indent=4, ensure_ascii=False)
+            return initial_structure
+        
+        return data
+    except Exception:
+        # Se il file dovesse essere corrotto per qualsiasi motivo, evitiamo il crash e restituiamo il default
+        return initial_structure
     """Carica il database multi-progetto. Se non esiste, crea la struttura iniziale."""
     CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
     JSON_DB_PATH = os.path.join(CURRENT_DIR, "ai_polling_results.json")
