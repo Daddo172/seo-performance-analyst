@@ -22,11 +22,15 @@ from src.aeo import analyze_page_geo_features,calculate_scientific_geo_score,AEO
 # 1. GESTIONE DATABASE JSON MULTI-PROGETTO
 # ==========================================
 def load_local_json():
-    """Carica il database multi-progetto. Se non esiste o è nel vecchio formato, lo rigenera in automatico."""
+    """Carica il database. Usa st.session_state per aggirare i blocchi di scrittura di Streamlit Cloud."""
+    # Se il database è già presente nella memoria di sessione, usa quello
+    if "db" in st.session_state:
+        return st.session_state.db
+
     CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
     JSON_DB_PATH = os.path.join(CURRENT_DIR, "ai_polling_results.json")
     
-    # Definiamo la struttura iniziale corretta
+    # Struttura di base iniziale
     initial_structure = {
         "projects": {
             "Complementors": {
@@ -43,61 +47,32 @@ def load_local_json():
         }
     }
     
-    # Se il file non esiste proprio, lo creiamo da zero
-    if not os.path.exists(JSON_DB_PATH):
-        with open(JSON_DB_PATH, "w", encoding="utf-8") as f:
-            json.dump(initial_structure, f, indent=4, ensure_ascii=False)
-        return initial_structure
-    
-    # Se il file esiste, lo leggiamo e verifichiamo il formato
-    try:
-        with open(JSON_DB_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        
-        # ⚠️ AGGIORNAMENTO DI SICUREZZA: Se il file è nel vecchio formato, lo sovrascriviamo
-        if "projects" not in data:
-            with open(JSON_DB_PATH, "w", encoding="utf-8") as f:
-                json.dump(initial_structure, f, indent=4, ensure_ascii=False)
-            return initial_structure
-        
-        return data
-    except Exception:
-        # Se il file dovesse essere corrotto per qualsiasi motivo, evitiamo il crash e restituiamo il default
-        return initial_structure
-    """Carica il database multi-progetto. Se non esiste, crea la struttura iniziale."""
-    CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-    JSON_DB_PATH = os.path.join(CURRENT_DIR, "ai_polling_results.json")
-    
-    if not os.path.exists(JSON_DB_PATH):
-        # Struttura iniziale di default se il file viene cancellato o non esiste
-        initial_structure = {
-            "projects": {
-                "Complementors": {
-                    "prompts": [
-                        {"id": 1, "text": "Conosci l'agenzia Complementors di Roma che si occupa di Web Design e SEO guidata da dati?", "category": "commercial"},
-                        {"id": 2, "text": "Come si ottimizza un sito web per la ricerca generativa (GEO e AEO)?", "category": "informational"}
-                    ],
-                    "entities": [
-                        {"id": 1, "name": "Complementors", "is_client": True, "patterns": ["complementors", "studio complementors", "davide"]},
-                        {"id": 2, "name": "Studio SEO Roma", "is_client": False, "patterns": ["studio seo roma", "seo roma srl"]}
-                    ],
-                    "results": []
-                }
-            }
-        }
-        with open(JSON_DB_PATH, "w", encoding="utf-8") as f:
-            json.dump(initial_structure, f, indent=4, ensure_ascii=False)
-        return initial_structure
-    
-    with open(JSON_DB_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
+    # Prova a leggere il file da GitHub se esiste per caricare i dati iniziali
+    if os.path.exists(JSON_DB_PATH):
+        try:
+            with open(JSON_DB_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if "projects" in data:
+                st.session_state.db = data
+                return data
+        except Exception:
+            pass
+            
+    st.session_state.db = initial_structure
+    return initial_structure
 
 def save_local_json(data):
-    CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-    JSON_DB_PATH = os.path.join(CURRENT_DIR, "ai_polling_results.json")
-    with open(JSON_DB_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
-
+    """Salva i dati nella sessione corrente e prova a fare un backup su disco (funziona in locale)."""
+    st.session_state.db = data
+    
+    # Tentativo di scrittura su disco (funzionerà perfettamente sul tuo PC in locale)
+    try:
+        CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+        JSON_DB_PATH = os.path.join(CURRENT_DIR, "ai_polling_results.json")
+        with open(JSON_DB_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
+    except Exception:
+        pass # Ignora silenziosamente il blocco di scrittura se siamo sul cloud
 # ==========================================
 # 2. PIPELINE DI POLLING PER PROGETTO SELEZIONATO
 # ==========================================
@@ -201,43 +176,39 @@ def render_ai_tab():
     project_list = list(db["projects"].keys())
     
     # Sidebar di Controllo Multi-Cliente
-    # Sidebar di Controllo Multi-Cliente
     with st.sidebar:
         st.subheader("📁 Gestione Clienti")
         selected_project = st.selectbox("Seleziona Progetto/Cliente", project_list)
         
-        # ➕ NUOVO PANNELLO: AGGIUNGI CLIENTE DIRETTAMENTE DALLA UI
+        # ➕ FORM DI CREAZIONE CLIENTE (Isolato e Garantito contro i bug di invio)
         st.markdown("---")
         with st.expander("➕ Aggiungi Nuovo Cliente da UI"):
-            new_name = st.text_input("Nome Brand/Azienda", key="new_brand_name")
-            new_prompt = st.text_area("Prompt da monitorare", placeholder="es. Conosci l'azienda X di Roma?", key="new_brand_prompt")
-            new_patterns = st.text_input("Keywords tracciamento (separate da virgola)", placeholder="es. azienda x, brand x", key="new_brand_patterns")
-            
-            if st.button("💾 Salva Nuovo Cliente"):
-                if new_name and new_prompt and new_patterns:
-                    db = load_local_json()
-                    
-                    # Puliamo i pattern inseriti dall'utente separati da virgola
-                    patterns_list = [p.strip().lower() for p in new_patterns.split(",") if p.strip()]
-                    
-                    # Generiamo la struttura del nuovo progetto all'interno del DB
-                    db["projects"][new_name] = {
-                        "prompts": [
-                            {"id": 1, "text": new_prompt, "category": "commercial"}
-                        ],
-                        "entities": [
-                            {"id": 1, "name": new_name, "is_client": True, "patterns": patterns_list},
-                            {"id": 2, "name": "Studio SEO Roma", "is_client": False, "patterns": ["studio seo roma", "seo roma srl"]}
-                        ],
-                        "results": []
-                    }
-                    
-                    save_local_json(db)
-                    st.toast(f"Cliente '{new_name}' registrato con successo!")
-                    st.rerun()
-                else:
-                    st.error("Compila tutti i campi prima di salvare!")
-        
+            with st.form(key="new_client_form", clear_on_submit=True):
+                new_name = st.text_input("Nome Brand/Azienda")
+                new_prompt = st.text_area("Prompt da monitorare", placeholder="es. Conosci l'azienda X di Roma?")
+                new_patterns = st.text_input("Keywords (separate da virgola)", placeholder="es. azienda x, brand x")
+                submit_button = st.form_submit_button("💾 Salva Nuovo Cliente")
+                
+                if submit_button:
+                    if new_name and new_prompt and new_patterns:
+                        db = load_local_json()
+                        patterns_list = [p.strip().lower() for p in new_patterns.split(",") if p.strip()]
+                        
+                        # Inseriamo il nuovo progetto in memoria
+                        db["projects"][new_name] = {
+                            "prompts": [{"id": 1, "text": new_prompt, "category": "commercial"}],
+                            "entities": [
+                                {"id": 1, "name": new_name, "is_client": True, "patterns": patterns_list},
+                                {"id": 2, "name": "Studio SEO Roma", "is_client": False, "patterns": ["studio seo roma", "seo roma srl"]}
+                            ],
+                            "results": []
+                        }
+                        save_local_json(db)
+                        st.toast(f"Cliente '{new_name}' pronto in memoria!")
+                        st.rerun()
+                    else:
+                        st.error("Riempi tutti i campi del form!")
+
         st.markdown("---")
         st.subheader("⚙️ Controlli Pipeline")
         if st.button("🚀 Lancia Polling Live"):
@@ -251,6 +222,16 @@ def render_ai_tab():
             save_local_json(db)
             st.toast(f"Storico risposte cancellato per {selected_project}!")
             st.rerun()
+            
+        # 📥 TASTO BACKUP: Scarica il file modificato a runtime per metterlo su GitHub
+        st.markdown("---")
+        current_db_state = load_local_json()
+        st.download_button(
+            label="📥 Scarica Backup JSON",
+            data=json.dumps(current_db_state, indent=4, ensure_ascii=False),
+            file_name="ai_polling_results.json",
+            mime="application/json"
+        )
 
     # --- RENDER DASHBOARD SPECIFICA DEL PROGETTO ---
     st.title(f"🤖 GEO Tracking: {selected_project}")
