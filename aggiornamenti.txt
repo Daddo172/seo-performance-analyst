@@ -1,0 +1,46 @@
+12 Luglio:
+
+sviluppo del motore di tracciamento GEO core, la gestione multi-progetto e l'interfaccia grafica interamente funzionante sul cloud
+
+L'infrastruttura Multi-Cliente: Cambi progetto dal menu a tendina o ne crei uno nuovo al volo dalla UI senza toccare una riga di codice.
+
+La Pipeline di Analisi Solida: Il codice fa un'unica chiamata ottimizzata a Gemini estraendo testo, sentiment e URL in un colpo solo.
+
+Il Sistema Anti-Crash (Fallback): Se l'API finisce i gettoni gratis (errore 429), l'app non va in blocco ma simula i dati per permetterti di lavorare sulla UI.
+
+La Visualizzazione Dati: Grafici a torta per la Share of Voice e grafici a barre per le fonti citate calcolati all'istante tramite Regex e Plotly.
+
+
+COSA DEVO FARE :
+2. Modulo Server Logs & Bot Discovery (Misurazione Precoce)
+Prima che un LLM citi un contenuto, il suo crawler deve scansionarlo. Tracciare i bot dell'AI ti permette di dare al cliente un KPI predittivo.
+
+Cosa inserire nella Dashboard:
+
+AI Crawling Activity (Grafico a linee): Un grafico che mostra il numero di hit/richieste giornaliere effettuate dai bot dell'AI come GPTBot, ClaudeBot, Applebot-Extended, PerplexityBot e Google-Extended.
+
+Top AI-Targeted Pages: Una tabella che mostra quali pagine o sezioni del sito attirano maggiormente l'interesse degli LLM.
+
+Sotto il cofano (Lato ETL/Logs):
+
+Configura un processo ETL che analizzi periodicamente i log del server (es. Nginx/Apache o tramite i log di Cloudflare se il cliente lo usa).
+
+Filtra le richieste per gli User-Agent specifici dei bot AI e aggrega i dati per giorno e per URL prima di spingerli nella dashboard.
+
+3. Modulo Ecosistema Contenuti (Content Repurposing Track)
+Per dimostrare il ROI del framework Content Repurposing Map, la dashboard deve mostrare come un singolo "Core Asset" stia performando su più canali.
+
+Cosa inserire nella Dashboard:
+
+Asset Performance Funnel: Una visualizzazione gerarchica (o a tabella espandibile). In cima metti il Core Asset (es. una super guida sul sito) con le sue metriche SEO tradizionali (Click e Impression da GSC). Sotto, colleghi i micro-contenuti derivati.
+
+Featured Snippets vs AI Overviews Capture: Un contatore che traccia quante volte i micro-contenuti ottimizzati in formato Q&A o tabelle hanno conquistato un Featured Snippet su Google tradizionale o sono entrati nelle AI Overviews.
+
+4. Modulo Local Entità (Local SEO Avanzata)
+Coerentemente con i Playbook ufficiali, la Local SEO non è solo "mettere la keyword nella scheda".
+
+Cosa inserire nella Dashboard:
+
+Entity Interaction Velocity: Un KPI che unisce la velocità di crescita delle recensioni, il tasso di risposta del proprietario (che deve essere vicino al 100%) e il volume di messaggi ricevuti.
+
+Visual Freshness Index: Un indicatore che segnala da quanti giorni non vengono caricate nuove foto o aggiornati i servizi/attributi nella scheda (fondamentale per mantenere l'entità "attiva" per gli algoritmi di prossimità di Google).
