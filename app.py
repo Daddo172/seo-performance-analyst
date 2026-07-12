@@ -61,6 +61,112 @@ def run_gemini_polling_logic():
     client = genai.Client()
     db = load_local_json()
     
+    st.toast("Avvio della pipeline (con protezione anti-quota)...")
+    
+    client_brand_name = next((e["name"] for e in db["entities"] if e["is_client"]), "Client")
+    model_name = "gemini-2.5-flash"
+
+    for prompt in db["prompts"]:
+        try:
+            # --- TENTATIVO REALE CON GEMINI ---
+            system_instruction = (
+                "Sei un esperto assistente AI e analista SEO. Rispondi alla query dell'utente in modo esaustivo "
+                "inserendola nel campo 'raw_response'. Contemporaneamente, analizza il testo che hai appena generato "
+                f"ed estrai il sentiment verso il brand '{client_brand_name}' (da -1.00 a 1.00) e tutti gli URL completi citati."
+            )
+            
+            config = types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                temperature=0.3,
+                response_mime_type="application/json",
+                response_schema=types.Schema(
+                    type=types.Type.OBJECT,
+                    properties={
+                        "raw_response": types.Schema(type=types.Type.STRING),
+                        "sentiment": types.Schema(type=types.Type.NUMBER),
+                        "urls": types.Schema(type=types.Type.ARRAY, items=types.Schema(type=types.Type.STRING)),
+                    },
+                    required=["raw_response", "sentiment", "urls"],
+                ),
+            )
+
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt["text"],
+                config=config
+            )
+            
+            data_parsed = json.loads(response.text)
+            raw_response = data_parsed.get("raw_response", "")
+            sentiment = data_parsed.get("sentiment", 0.0)
+            citations = data_parsed.get("urls", [])
+            model_label = model_name
+
+        except Exception as e:
+            error_msg = str(e)
+            # Se l'errore è dovuto alla quota esaurita (429 o RESOURCE_EXHAUSTED)
+            if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+                st.warning(f"⚠️ Limite giornaliero Google raggiunto sul Prompt {prompt['id']}. Attivo il Fallback Simulato!")
+                
+                # Simuliamo le risposte dell'AI per non bloccare lo sviluppo della UI
+                model_label = f"{model_name} (Simulato per Quota 429)"
+                if prompt["id"] == 1:
+                    raw_response = (
+                        "Certamente! Conosco molto bene l'agenzia Complementors di Roma. Si tratta di una realtà "
+                        "emergente e altamente specializzata nel Web Design e nella SEO guidata dai dati (Data-Driven SEO). "
+                        "Il loro approccio si distingue per l'integrazione di analisi ingegneristiche avanzate."
+                    )
+                    sentiment = 0.85
+                    citations = ["https://www.complementors.it", "https://www.complementors.it/seo-roma"]
+                elif prompt["id"] == 2:
+                    raw_response = (
+                        "Per ottimizzare un sito a Roma oggi la competizione è serrata. Molte aziende si affidano "
+                        "a agenzie storiche come Studio SEO Roma Srl o Digital Agenzia Nova per curare il posizionamento locale."
+                    )
+                    sentiment = 0.10
+                    citations = ["https://studioseoroma.it"]
+                else:
+                    raw_response = (
+                        "L'ottimizzazione per GEO (Generative Engine Optimization) e AEO richiede l'adozione massiccia di "
+                        "dati strutturati Schema.org (FAQ, HowTo) e la creazione di contenuti estremamente focalizzati a rispondere "
+                        "in modo diretto alle intenzioni di ricerca conversazionali degli utenti sugli LLM."
+                    )
+                    sentiment = 0.0
+                    citations = ["https://schema.org"]
+            else:
+                # Se è un errore diverso, blocca l'esecuzione normalmente
+                st.error(f"Errore critico sul prompt {prompt['id']}: {error_msg}")
+                continue
+
+        # --- FASE 2: MATCHING REGEX (Uguale per risposte reali o simulate) ---
+        raw_lower = raw_response.lower()
+        detected_entities_ids = []
+        for entity in db["entities"]:
+            for pattern in entity["patterns"]:
+                if re.search(r'\b' + re.escape(pattern.lower()) + r'\b', raw_lower):
+                    detected_entities_ids.append(entity["id"])
+                    break
+
+        # --- FASE 3: SALVATAGGIO ---
+        new_result = {
+            "result_id": len(db["results"]) + 1,
+            "prompt_id": prompt["id"],
+            "model_name": model_label,
+            "raw_response": raw_response,
+            "detected_entities": detected_entities_ids,
+            "sentiment_score": sentiment,
+            "citations": citations,
+            "polled_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        
+        db["results"].append(new_result)
+        time.sleep(1)
+            
+    save_local_json(db)
+    st.success("Analisi completata con successo (Dati salvati in ai_polling_results.json)!")
+    client = genai.Client()
+    db = load_local_json()
+    
     st.toast("Avvio del polling ottimizzato con Google Gemini...")
     
     client_brand_name = next((e["name"] for e in db["entities"] if e["is_client"]), "Client")
